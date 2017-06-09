@@ -1,0 +1,39 @@
+
+{
+    "gravity": {"x": 0.0, "y": 0.0}, 
+    "allowSleep": true, 
+    "autoClearForces": true, 
+    "positionIterations": 3, 
+    "velocityIterations": 8, 
+    "stepsPerSecond": 60, 
+    "warmStarting": true, 
+    "continuousPhysics": true, 
+    "subStepping": false, 
+    "body": 
+    [
+        {  
+            "name": "myBody", 
+            "type": 2, 
+            "angle": 0, 
+            "angularDamping": 0, 
+            "angularVelocity": 0, 
+            "linearDamping": 0, 
+            "massData-mass": 1, 
+            "massData-I": 1, 
+            "fixture": 
+            [
+                {
+                    "name": "fixture4", 
+                    "density": 1, 
+                    "friction": 0.2, 
+                    "restitution": 0.1, 
+                    "circle": {
+                        "center": {"x": 0.0, "y": 0.0},
+                        "radius": 0.1
+                    }
+                }
+            ]
+        }        
+    ] 
+}
+

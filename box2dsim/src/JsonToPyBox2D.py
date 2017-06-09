@@ -4,9 +4,22 @@
 import Box2D as b2
 import json
 
+def updateWorldFromJson(b2_world, filePathName):
+    """
+    # loads json from file to memory
+    # and updates b2_world with it
+    """
+    # load json into memory
+    with open(filePathName, "r") as json_file:
+        jsw = json.load(json_file)
 
-# NOTE: no custom properties implemented
-# refer to rube, box2d and pybox2d documentation
+    # fill world with bodies and joints
+    body_refs = add_bodies(b2_world, jsw)
+    joint_refs = add_joints(b2_world, jsw)
+
+    return body_refs, joint_refs
+
+
 def createWorldFromJson(filePathName):
     """
     # loads json from file to memory
@@ -20,31 +33,35 @@ def createWorldFromJson(filePathName):
     b2_world = create_world(jsw)
 
     # fill world with bodies and joints
-    add_bodies(b2_world, jsw)
-    add_joints(b2_world, jsw)
+    body_refs = add_bodies(b2_world, jsw)
+    joint_refs = add_joints(b2_world, jsw)
 
-    return b2_world
-
+    return b2_world, body_refs, joint_refs
 
 def add_joints(
         b2_world,
         jsw,  # json world
         ):
+    joint_refs = dict()
     if "joint" in jsw.keys():
         # add joints to world
         for joint in jsw["joint"]:
-            add_joint(b2_world, jsw, joint)
+            key, ref = add_joint(b2_world, jsw, joint)
+            joints[key] = ref
+    return joint_refs
 
 
 def add_bodies(
         b2_world,
         jsw,  # json world
         ):
+    body_refs = dict()
     if "body" in jsw.keys():
         # add bodies to world
         for js_body in jsw["body"]:
-            add_body(b2_world, jsw, js_body)
-
+            key, ref = add_body(b2_world, jsw, js_body)
+            body_refs[key] = ref
+    return body_refs
 
 def create_world(
         jsw,  # json world
@@ -67,8 +84,9 @@ def add_joint(
     jointDef = create_jointDef(jsw_joint, b2_world)
 
     # create joint from definition
-    b2_world.CreateJoint(jointDef, jsw_joint["type"])
+    joint_ref = b2_world.CreateJoint(jointDef, jsw_joint["type"])
 
+    return jsw_joint['name'], joint_ref
 
 def create_jointDef(jsw_joint, b2_world):
     joint_type = jsw_joint["type"]  # naming
@@ -228,6 +246,8 @@ def add_body(
 
         for fixture in jsw_body["fixture"]:
             add_fixture(body_ref, jsw, fixture)
+
+        return jsw_body['name'], body_ref
 
 
 def add_fixture(
