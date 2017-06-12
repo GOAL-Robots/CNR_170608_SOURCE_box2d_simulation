@@ -12,7 +12,31 @@
     "body": 
     [
         {  
-            "name": "myBody", 
+            "name": "ball", 
+            "type": 2, 
+            "angle": 0, 
+            "angularDamping": 0, 
+            "angularVelocity": 0, 
+            "linearDamping": 0, 
+            "massData-mass": 1, 
+            "massData-I": 1, 
+            "fixture": 
+            [
+
+                {
+                    "name": "fixture4", 
+                    "density": 1, 
+                    "friction": 0.2, 
+                    "restitution": 0.1, 
+                    "circle": {
+                        "center": {"x": 0.0, "y": 0.0},
+                        "radius": 0.1
+                    }
+                }
+            ]
+        },
+        {  
+            "name": "rod", 
             "type": 2, 
             "angle": 0, 
             "angularDamping": 0, 
@@ -23,13 +47,16 @@
             "fixture": 
             [
                 {
-                    "name": "fixture4", 
+                    "name": "fixture5", 
                     "density": 1, 
                     "friction": 0.2, 
                     "restitution": 0.1, 
-                    "circle": {
-                        "center": {"x": 0.0, "y": 0.0},
-                        "radius": 0.1
+                    "polygon": {
+                        "centroid": {"x": 0.0, "y": 0.0},
+                        "vertices": {
+                            "x": [-0.1, 0.1, 0.1, -0.1],
+                            "y": [0.1, 0.1, 1.1, 1.1]
+                        }
                     }
                 }
             ]

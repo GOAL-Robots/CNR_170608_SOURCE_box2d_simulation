@@ -1,0 +1,323 @@
+//World object - the root object of the file
+{
+    "gravity": (vector), 
+    "allowSleep": true, 
+    "autoClearForces": true, 
+    "positionIterations": 3, 
+    "velocityIterations": 8, 
+    "stepsPerSecond": 60, 
+    "warmStarting": true, 
+    "continuousPhysics": true, 
+    "subStepping": false, 
+    "body": //An array of zero or more body objects.
+    [
+        //Body object
+        {  
+            "name": "dynamicbody4", 
+            "type": 2, //0 = static, 1 = kinematic, 2 = dynamic
+            "angle": 0, //radians
+            "angularDamping": 0, 
+            "angularVelocity": 0, //radians per second
+            "awake": true, 
+            "bullet": true, 
+            "fixedRotation": true, 
+            "linearDamping": 0, 
+            "linearVelocity": (vector),
+            "massData-mass": 1, 
+            "massData-center": (vector),
+            "massData-I": 1, 
+            "position": (vector),
+            "fixture": //An array of zero or more fixture objects.
+            [
+                //Fixture object
+                {
+                    "name": "fixture4", 
+                    "density": 1, 
+                    "filter-categoryBits": 1, //if not present, interpret as 1
+                    "filter-maskBits": 1, //if not present, interpret as 65535
+                    "filter-groupIndex": 1, 
+                    "friction": 0.2, 
+                    "restitution": 0.1, 
+                    "sensor": true,
+                    //A fixture object will have ONE of the following shape objects
+                    //Circle shape object
+                    "circle": {
+                        "center": (vector),
+                        "radius": 0.1
+                    }
+                    //... or 
+                    //Polygon shape object
+                    "polygon": {
+                        "vertices": (vector array)
+                    }
+                    //... or 
+                    //Chain shape object - also represents edge shapes     
+                    "chain": {
+                        "vertices": (vector array),
+                        //If the following properties are not present, the shape is an open-ended 
+                        //chain shape. If they are present, the shape is a closed loop shape.
+                        "hasNextVertex": true, 
+                        "hasPrevVertex": true, 
+                        "nextVertex": (vector), 
+                        "prevVertex": (vector)
+
+                    }, 
+                    "customProperties": //An array of zero or more custom properties.
+                    [
+                        //Example custom property object
+                        {
+                            "name": "respawn_timeout", 
+                            "float": 2.5
+                        },
+                        (custom property),
+                        (custom property)
+                    ]
+                }
+            ],
+
+            "customProperties": //An array of zero or more custom properties.
+            [
+                //Example custom property object
+                {
+                    "name": "respawn_timeout", 
+                    "float": 2.5
+                },
+                (custom property),
+                (custom property)
+            ]
+
+        }        
+    ], 
+    "image": //An array of zero or more image objects.
+    [
+        //Image object
+        {
+            "name": "image0", 
+            "opacity": 1, //the length of the vertical side of the image in physics units
+            "renderOrder": 0, //float
+            "scale": 1,//the length of the vertical side of the image in physics units
+            "aspectScale": 1,//the ratio of width to height, relative to the natural dimensions
+            "angle": 0, //radians
+            "body": 4, //zero-based index of body in bodies array
+            "center": (vector), //center position in body local coordinates
+            "corners": (vector array), //corner positions in body local coordinates
+            "file": "../images/tire.png", //if relative, from the location of the exported file
+            "filter": 1, //texture magnification filter, 0 = linear, 1 = nearest
+            "flip": true, //true if the texture should be reversed horizontally
+            "colorTint": [127,114,64,255], //RGBA values for color tint, if not 255,255,255,255
+            "glDrawElements": [
+                //Indices for drawing GL_TRIANGLES with the glDrawElements function and
+                //the other glXXX properties below
+                0, 1, 2, 2, 3, 0
+            ], 
+            "glTexCoordPointer": [
+                //Texture coordinates for use with glTexCoordPointer (the 'flip' property
+                    //has already been taken into account)
+                    1, 0, 0, 0, 0, 1, 1, 1
+            ], 
+            "glVertexPointer": [
+                //Vertex positions for use with glVertexPointer
+                -0.5, -0.5, 0.5, -0.5, 0.5, 0.5, -0.5, 0.5
+            ],              
+            "customProperties": //An array of zero or more custom properties.
+            [
+                //Example custom property object
+                {
+                    "name": "respawn_timeout", 
+                    "float": 2.5
+                },
+                (custom property),
+                (custom property)
+            ]              
+        }
+    ], 
+    "joint": //An array of zero or more joint objects.
+    [        
+        //Revolute joint object        
+        {
+            "type": "revolute",
+            "name": "joint1", 
+            "anchorA": (vector), 
+            "anchorB": (vector), 
+            "bodyA": 4, //zero-based index of body in bodies array
+            "bodyB": 1, //zero-based index of body in bodies array
+            "collideConnected": true, 
+            "enableLimit": true, 
+            "enableMotor": true, 
+            "jointSpeed": 0, 
+            "lowerLimit": 0, 
+            "maxMotorTorque": 0, 
+            "motorSpeed": 0, 
+            "refAngle": 0, 
+            "upperLimit": 0,              
+            "customProperties": //An array of zero or more custom properties.
+            [
+                //Example custom property object
+                {
+                    "name": "respawn_timeout", 
+                    "float": 2.5
+                },
+                (custom property),
+                (custom property)
+            ]
+        },        
+        //Distance joint object
+        {
+            "type": "distance",
+            "name": "joint2", 
+            "anchorA": (vector), 
+            "anchorB": (vector), 
+            "bodyA": 4, //zero-based index of body in bodies array
+            "bodyB": 1, //zero-based index of body in bodies array
+            "collideConnected": true, 
+            "dampingRatio": 0, 
+            "frequency": 0, 
+            "length": 3.56,              
+            "customProperties": //An array of zero or more custom properties.
+            [
+                //Example custom property object
+                {
+                    "name": "respawn_timeout", 
+                    "float": 2.5
+                },
+                (custom property),
+                (custom property)
+            ]
+        },        
+        //Prismatic joint object
+        {
+            "type": "prismatic",
+            "name": "joint3", 
+            "anchorA": (vector), 
+            "anchorB": (vector), 
+            "bodyA": 4, //zero-based index of body in bodies array
+            "bodyB": 1, //zero-based index of body in bodies array
+            "collideConnected": true, 
+            "enableLimit": true, 
+            "enableMotor": true, 
+            "localAxisA": (vector), 
+            "lowerLimit": 0, 
+            "maxMotorForce": 0, 
+            "motorSpeed": 0, 
+            "refAngle": 0, 
+            "upperLimit": 0,              
+            "customProperties": //An array of zero or more custom properties.
+            [
+                //Example custom property object
+                {
+                    "name": "respawn_timeout", 
+                    "float": 2.5
+                },
+                (custom property),
+                (custom property)
+            ]
+        },             
+        //Wheel joint object
+        {
+            "type": "wheel",
+            "name": "joint4", 
+            "anchorA": (vector), 
+            "anchorB": (vector), 
+            "bodyA": 4, //zero-based index of body in bodies array
+            "bodyB": 1, //zero-based index of body in bodies array
+            "collideConnected": true, 
+            "enableMotor": true, 
+            "localAxisA": (vector), 
+            "maxMotorTorque": 0, 
+            "motorSpeed": 0, 
+            "springDampingRatio": 0.7, 
+            "springFrequency": 4,              
+            "customProperties": //An array of zero or more custom properties.
+            [
+                //Example custom property object
+                {
+                    "name": "respawn_timeout", 
+                    "float": 2.5
+                },
+                (custom property),
+                (custom property)
+            ]
+        },        
+        //Rope joint object
+        {
+            "type": "rope",
+            "name": "joint5", 
+            "anchorA": (vector), 
+            "anchorB": (vector), 
+            "bodyA": 4, //zero-based index of body in bodies array
+            "bodyB": 1, //zero-based index of body in bodies array
+            "collideConnected": true, 
+            "maxLength": 4.73,              
+            "customProperties": //An array of zero or more custom properties.
+            [
+                //Example custom property object
+                {
+                    "name": "respawn_timeout", 
+                    "float": 2.5
+                },
+                (custom property),
+                (custom property)
+            ]
+        },        
+        //Motor joint object
+        {
+            "type": "motor",
+            "name": "joint5", 
+            "anchorA": (vector), //this is the 'linear offset' of the joint
+            "anchorB": (vector), //ignored
+            "bodyA": 4, //zero-based index of body in bodies array
+            "bodyB": 1, //zero-based index of body in bodies array
+            "collideConnected": true, 
+            "maxForce": 10, 
+            "maxTorque": 7.5, 
+            "correctionFactor": 0.2, 
+            "customProperties": //An array of zero or more custom properties.
+            [
+                //Example custom property object
+                {
+                    "name": "respawn_timeout", 
+                    "float": 2.5
+                },
+                (custom property),
+                (custom property)
+            ]
+        },        
+        //Weld joint object
+        {
+            "type": "weld",
+            "name": "joint5", 
+            "anchorA": (vector),
+            "anchorB": (vector),
+            "bodyA": 4, //zero-based index of body in bodies array
+            "bodyB": 1, //zero-based index of body in bodies array
+            "collideConnected": true, 
+            "refAngle": 0, 
+            "dampingRatio": 0, 
+            "frequency": 0, 
+            "customProperties": //An array of zero or more custom properties.
+            [
+                //Example custom property object
+                {
+                    "name": "respawn_timeout", 
+                    "float": 2.5
+                },
+                (custom property),
+                (custom property)
+            ]
+        },        
+        //Friction joint object
+        {
+            "type": "friction",
+            "name": "joint5", 
+            "anchorA": (vector),
+            "anchorB": (vector),
+            "bodyA": 4, //zero-based index of body in bodies array
+            "bodyB": 1, //zero-based index of body in bodies array
+            "collideConnected": true, 
+            "maxForce": 10, 
+            "maxTorque": 7.5 
+        }   
+
+    ]
+}
+
