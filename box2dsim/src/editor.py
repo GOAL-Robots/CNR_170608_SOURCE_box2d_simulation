@@ -90,7 +90,10 @@ class Polygon(Body):
         
     def add_vertex(self, point):
         self.main["fixture"][0]["polygon"]["vertices"].append([point.x(), point.y()])
-      
+    
+    def setPosition(self, point):
+        self.main["position"] = (point.x, point.y)
+
     def remove_vertex(self):
         self.main["fixture"][0]["polygon"]["vertices"] = self.main["fixture"][0]["polygon"]["vertices"][:-2]
               
@@ -120,7 +123,7 @@ class Circle(Body):
     def __init__(self):
         super(Circle, self).__init__()
         self.main["fixture"][0]["circle"] = dict()
-        self.main["fixture"][0]["circle"]["center"] = QtCore.QPoint(0,0)
+        self.main["fixture"][0]["circle"]["center"] = QtCore.QPointF(0,0)
         self.main["fixture"][0]["circle"]["radius"] = 0
         
     def center(self):
@@ -148,6 +151,8 @@ class Circle(Body):
 class Joint(object):
 
     def __init__(self):
+        
+        self.anchor = (0, 0)
         self.main = dict()
         self.main["type"] = "revolute"
         self.main["name"] = ""
@@ -165,8 +170,8 @@ class Joint(object):
         self.main["refAngle"] = 0
         self.main["upperLimit"] = 0
     
-    def add_anchorA(self, point):
-        self.main["anchorA"] = (point.x(), point.y())
+    def add_anchor(self, point):
+        self.anchor = (point.x(), point.y())
     
     def add_anchorB(self, point):
         self.main["anchorB"] = (point.x(), point.y())
@@ -182,7 +187,7 @@ class Joint(object):
         return main_serialized     
   
 def toPoint(list):
-    return QtCore.QPoint(*list)  
+    return QtCore.QPointF(*list)  
 
 class Types:
 
@@ -193,26 +198,33 @@ class Types:
 
 class DataTable(QtGui.QTableWidget):
     def __init__(self, obj):
+
         self.obj = obj
         if self.obj is  None:
            self.obj = Polygon() 
         self.rows = len(self.obj.main.keys())
         QtGui.QTableWidget.__init__(self, self.rows, 2)
         
-        self.setmydata()
+        self.setData()
         self.resizeColumnsToContents()
         self.resizeRowsToContents()
         self.itemChanged.connect(self.onItemChanged) 
         self.horizontalHeader().hide()
         self.verticalHeader().hide()
         
-    def setmydata(self):
+    def setData(self):
  
         m = 0
         for key,value in self.obj.main.iteritems():           
             name = QtGui.QTableWidgetItem(key)
             name.setFlags(QtCore.Qt.ItemIsEnabled)
-            cont = QtGui.QTableWidgetItem(str(value))
+            svalue = str(value)
+            svalue = svalue.replace("{", "{\n")
+            svalue = svalue.replace("},", "\n},")
+            svalue = svalue.replace(",", ",\n")
+            svalue = svalue.replace("[[", "[\n[")
+            svalue = svalue.replace("}]", "\n}]")
+            cont = QtGui.QTableWidgetItem(svalue)
             self.setItem(m, 0, name)
             self.setItem(m, 1, cont)
             m += 1   
@@ -224,11 +236,23 @@ class DataTable(QtGui.QTableWidget):
 class DataManager(object):
 
     def __init__(self):
+
         self.world = World()
         self.elements = dict()
         self.elements["polygons"] = []
         self.elements["circles"] = []
-    
+        self.elements["joints"] = []
+   
+    def getBodies(self):
+
+        bodies = [ p.main["name"] for p in self.elements["polygons"] ]
+        bodies = bodies + [ p.main["name"] for p in self.elements["circles"] ]
+        
+        bodies = filter(None, bodies)
+
+        return bodies
+
+
     def makeJson(self):
         
         world = self.world.serializeForJson()
@@ -254,9 +278,10 @@ class DataManager(object):
 
 class DrawingFrame(QtGui.QFrame):
 
-    def __init__(self, tables, parent=None):
+    def __init__(self, tables, app, parent=None):
         
         super(DrawingFrame, self).__init__(parent)
+        self.main_app = app
         self.tables = tables
         self.parent = parent
     
@@ -273,14 +298,16 @@ class DrawingFrame(QtGui.QFrame):
         self.prevPoint = None
         self.currPoint = None
 
-        width = 600
-        height = 600 
-        self.setFixedSize(width, height)
         palette = self.palette()
-        palette.setColor(self.backgroundRole(), QtGui.QColor( 255, 255, 255 ) );
+        palette.setColor(self.backgroundRole(), QtGui.QColor( 230, 230, 255 ) );
         self.setPalette(palette)
         self.setAutoFillBackground(True)
         
+        self.WINDOW_BOTTOM = 0.0 
+        self.WINDOW_LEFT = 0.0
+        self.WINDOW_WIDTH = 20.0
+        self.WINDOW_HEIGHT = 20.0
+
     def getCurrObj(self):
         
         o_type=None
@@ -307,7 +334,6 @@ class DrawingFrame(QtGui.QFrame):
             if self.tables.layout().count() > 0:
                 self.tables.layout().removeItem(self.tables.layout().itemAt(0))        
             self.tables.layout().addWidget(DataTable(curr_obj))
-            self.parent.resize(self.parent.layout.sizeHint())
 
     def setPen(self, painter, highlight=False):
         
@@ -322,7 +348,6 @@ class DrawingFrame(QtGui.QFrame):
                        QtCore.Qt.SolidLine,
                        QtCore.Qt.RoundCap, 
                        QtCore.Qt.RoundJoin))         
-        
 
     def newShape(self):
         self.new_shape = True
@@ -402,20 +427,49 @@ class DrawingFrame(QtGui.QFrame):
             self.updateTable()
             self.update()
 
+    def switchToJoints(self):
+        if self.shape_type != Types.JOINT:
+            self.shape_type = Types.JOINT
+            self.new_shape = True
+            self.prevPoint = None
+            self.currPoint = None
+            self.nextPoint = None
+            self.current_shape = -1
+            self.updateTable()
+            self.update()
 
     def mousePressEvent(self, event):
+        scaled_pos = self.scalePoint(event.pos())
         if event.button() == QtCore.Qt.LeftButton:
             if self.new_shape == True:
                 if self.shape_type == Types.POLYGON :
                     p = Polygon()
+                    p.add_vertex(scaled_pos)
                     self.parent.data_manager.elements["polygons"].append(p)
-                    self.parent.data_manager.elements["polygons"][self.current_shape].add_vertex(event.pos())
                     self.prevPoint = event.pos()
                 if self.shape_type == Types.CIRCLE :
                     c = Circle()
+                    c.setCenter(scaled_pos)
                     self.parent.data_manager.elements["circles"].append(c)
-                    self.parent.data_manager.elements["circles"][self.current_shape].setCenter(event.pos())
-                
+                if self.shape_type == Types.JOINT :
+                    j = Joint()
+                    items = self.parent.data_manager.getBodies()
+                    bodyA, okPressed = QtGui.QInputDialog.getItem(None, "BodyA", 'BodyA', items)
+                    if okPressed: j.main["bodyA"] = bodyA
+
+                    bodyB, okPressed = QtGui.QInputDialog.getItem(None, "BodyB", 'BodyB', items)
+                    if okPressed: j.main["bodyB"] = bodyB
+                    
+                    # for p in self.parent.data_manager.elements["polygons"] + self.parent.data_manager.elements["polygons"]: 
+                    #     if p.main["name"] == bodyA:
+                    #         try:
+                    #              j.main["anchorA"] = (scaled_pos.x() - p.main["position"].
+                    # 
+
+
+                    j.add_anchor(scaled_pos)
+                    self.parent.data_manager.elements["joints"].append(j)
+              
                 self.new_shape = False
 
     def mouseMoveEvent(self, event):
@@ -423,40 +477,58 @@ class DrawingFrame(QtGui.QFrame):
         self.update()
 
     def mouseReleaseEvent(self, event):
+        scaled_pos = self.scalePoint(event.pos())
         if event.button() == QtCore.Qt.LeftButton:
             if self.shape_type == Types.POLYGON :
                 curr_polygon = self.parent.data_manager.elements["polygons"][self.current_shape]
                 self.currPoint = event.pos()
-                curr_polygon.add_vertex(event.pos())
+                curr_polygon.add_vertex(scaled_pos)
                 
                 # test 
                 if len(curr_polygon.vertices())>=3 :
                     b2polygon = b2.b2PolygonShape(vertices=curr_polygon.to_b2Vec2())   
                       
                     if b2polygon is not None and len(b2polygon.vertices)>2:
-                        curr_polygon.from_b2Vec2(b2polygon.vertices)    
-           
+                        curr_polygon.from_b2Vec2(b2polygon.vertices) 
+                        curr_polygon.setPosition(b2polygon.centroid)
                 
-                if  len(curr_polygon.vertices())==1:
-                    print "zero"
+                if len(curr_polygon.vertices())==1:
                     self.deleteShape()
-                    
-                    
+
             if self.shape_type == Types.CIRCLE :
                 if len(self.parent.data_manager.elements["circles"]) > 0:
                     c = self.parent.data_manager.elements["circles"][self.current_shape]
-                    c.setRadius(distance(c.center(), event.pos()))
+                    c.setRadius(distance(c.center(), scaled_pos))
                     self.new_shape = True
 
             self.prevPoint = event.pos()
             self.update()
             self.updateTable()
+    
+    def scalePoint(self, point):
+
+        return QtCore.QPointF( 
+                (point.x()/600.0)*float(self.WINDOW_WIDTH),
+                self.WINDOW_HEIGHT - (point.y()/600.0)*float(self.WINDOW_HEIGHT) )
 
 
+    def rescalePoint(self, point):
+
+        return QtCore.QPointF( 
+                point.x()*600.0/float(self.WINDOW_WIDTH),
+                (self.WINDOW_HEIGHT -  point.y())*600.0/float(self.WINDOW_HEIGHT) )
+    
+    def rescale(self, x):
+
+        return x*600.0/(float(self.WINDOW_WIDTH)*
+                (float(self.WINDOW_WIDTH)/float(self.WINDOW_HEIGHT)))
+       
     def paintEvent(self, event):
+
+
         painter = QtGui.QPainter(self)
         painter.setRenderHint(QtGui.QPainter.Antialiasing)
-
+        
         self.setPen(painter)
         
         polygons_length = len(self.parent.data_manager.elements["polygons"])
@@ -472,9 +544,13 @@ class DrawingFrame(QtGui.QFrame):
             for idx in xrange(1,len(vs)):
                     prev_point = toPoint(vs[idx-1])
                     next_point = toPoint(vs[idx])
-                    painter.drawLine(prev_point, next_point)
+                    painter.drawLine(
+                            self.rescalePoint(prev_point),
+                            self.rescalePoint(next_point))
             
-            painter.drawLine(toPoint(vs[-1]), toPoint(vs[0]))
+            painter.drawLine(
+                    self.rescalePoint(toPoint(vs[-1])), 
+                    self.rescalePoint(toPoint(vs[0])))
         
         self.setPen(painter)
 
@@ -487,7 +563,10 @@ class DrawingFrame(QtGui.QFrame):
             else: 
                 self.setPen(painter)
 
-            painter.drawEllipse(circle.center(), circle.radius(), circle.radius())
+            painter.drawEllipse(
+                    self.rescalePoint(circle.center()), 
+                    self.rescale(circle.radius()), 
+                    self.rescale(circle.radius()))
  
  
         painter.setPen(QtGui.QPen(self.myPenColor, self.myPenWidth*0.1,
@@ -496,17 +575,20 @@ class DrawingFrame(QtGui.QFrame):
         if self.prevPoint is not None and self.currPoint is not None:                
             if self.shape_type == Types.POLYGON :
     
-                    painter.drawLine(self.prevPoint, self.currPoint)
+                    painter.drawLine(
+                            self.prevPoint, 
+                            self.currPoint)
     
             elif self.shape_type == Types.CIRCLE :
                   
                 if len(self.parent.data_manager.elements["circles"]) > 0:
+                    center = self.parent.data_manager.elements["circles"][self.current_shape].center() 
                     painter.drawLine(
-                            self.parent.data_manager.elements["circles"][self.current_shape].center(), 
-                            self.currPoint)
+                            self.rescalePoint(center), 
+                            self.currPoint )
 
 class MainWindow(QtGui.QMainWindow):
-    def __init__(self):
+    def __init__(self, app):
         
         super(MainWindow, self).__init__()
         self.data_manager = DataManager()
@@ -517,11 +599,12 @@ class MainWindow(QtGui.QMainWindow):
         main.setLayout(self.layout)
            
         self.worldTable = QtGui.QWidget(self)
-        self.worldTable.setFixedSize(400,600)     
         self.tables = QtGui.QWidget(self)
-        self.tables.setFixedSize(500,600)
-        self.drawing_frame = DrawingFrame(self.tables,  self)
-              
+        self.drawing_frame = DrawingFrame(self.tables, app,  self)
+        self.worldTable.resize(300,600)
+        self.tables.resize(300,600)
+        self.drawing_frame.setFixedSize(600,600)
+        self.resize(1200, 600)      
   
         exitAction = QtGui.QAction('Exit', self)
         exitAction.setShortcut('Q')
@@ -536,6 +619,10 @@ class MainWindow(QtGui.QMainWindow):
         circleAction.setShortcut('C')
         circleAction.setCheckable(True)
         circleAction.triggered.connect(self.drawing_frame.switchToCircles)         
+        jointAction = QtGui.QAction('Joint', self)
+        jointAction.setShortcut('C')
+        jointAction.setCheckable(True)
+        jointAction.triggered.connect(self.drawing_frame.switchToJoints)         
         newAction = QtGui.QAction('New', self)
         newAction.setShortcut('N')
         newAction.triggered.connect(self.drawing_frame.newShape)  
@@ -563,6 +650,7 @@ class MainWindow(QtGui.QMainWindow):
         shapes = QtGui.QActionGroup(self)
         shapes.addAction(polygonAction)
         shapes.addAction(circleAction)
+        shapes.addAction(jointAction)
         shapes.setExclusive(True)
 
         toolBar = QtGui.QToolBar(self)
@@ -575,6 +663,7 @@ class MainWindow(QtGui.QMainWindow):
         toolBar.addAction(loadAction)
         toolBar.addAction(polygonAction)
         toolBar.addAction(circleAction)
+        toolBar.addAction(jointAction)
         
         self.addToolBar(toolBar)
         
@@ -584,8 +673,9 @@ class MainWindow(QtGui.QMainWindow):
         self.layout.addWidget(self.worldTable)
         self.layout.addWidget(self.drawing_frame)
         self.layout.addWidget(self.tables)
+        self.layout.addStretch(1)
         self.setWindowTitle("")
-        self.resize(self.layout.sizeHint())
+        #self.resize(self.layout.sizeHint())
     
     def save(self):
         sfile = open("data_dump", "w")
@@ -601,7 +691,7 @@ if __name__ == '__main__':
     import sys
 
     app = QtGui.QApplication(sys.argv)
-    window = MainWindow()
+    window = MainWindow(app)
     window.show()
     sys.exit(app.exec_())
 
