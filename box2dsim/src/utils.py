@@ -10,13 +10,17 @@ def currentBodyShape(body, world):
         :param world: the reference world
         :type world: b2World
 
-      9  :return: a list of vertices
+        :return: a list of vertices
         :rtype: list(b2Vec2)
     """
     shape =  body.fixtures[0].shape
     if type(shape) == b2.b2PolygonShape :
+        
         vercs = body.fixtures[0].shape.vertices
+        return [body.GetWorldPoint(vert) for vert in vercs]
+    elif  type(shape) == b2.b2CircleShape :
+        return body.GetWorldPoint((0,0))
 
-    return [body.GetWorldPoint(vert) for vert in vercs]
+    return None
 
 

@@ -38,10 +38,13 @@ class  Box2DSim(object):
         self.world.Step(self.dt, self.vel_iters, self.pos_iters)
 
 if __name__ == "__main__":
-    sim = Box2DSim("../tests/sample2.json")
+    sim = Box2DSim("body2d.json")
     
     data = []
     for t in range(20):
         sim.step()
-        v = b2u.currentBodyShape(sim.bodies["rod"], sim.world)
-        data.append(v)
+        dick = b2u.currentBodyShape(sim.bodies["dick_head"], sim.world)
+        ball1 = b2u.currentBodyShape(sim.bodies["ball1"], sim.world)
+        ball2 = b2u.currentBodyShape(sim.bodies["ball2"], sim.world)
+        data.append([dick, ball1, ball2])
+    print data

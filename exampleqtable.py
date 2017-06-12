@@ -12,13 +12,18 @@ class MyTable(QTableWidget):
         self.resizeColumnsToContents()
         self.resizeRowsToContents()
         self.itemChanged.connect(self.onItemChanged) 
+        self.horizontalHeader().hide()
+        self.verticalHeader().hide()
 
     def setmydata(self):
  
         m = 0
         for key,value in self.data.iteritems():           
+            name = QTableWidgetItem(key)
+            name.setFlags(Qt.ItemIsEnabled)
             cont = QTableWidgetItem("%d" % value)
-            self.setItem(m, 0, cont)
+            self.setItem(m, 0, name)
+            self.setItem(m, 1, cont)
             m += 1
 
     def onItemChanged(self, item):
@@ -26,7 +31,7 @@ class MyTable(QTableWidget):
  
 def main(args):
     app = QApplication(args)
-    table = MyTable(data, 5, 1)
+    table = MyTable(data, 2, 2)
     table.show()
     sys.exit(app.exec_())
  

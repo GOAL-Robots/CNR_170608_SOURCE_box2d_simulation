@@ -43,6 +43,7 @@ def createWorldFromJson(filePathName):
     with open(filePathName, "r") as json_file:
         jsw = json.load(json_file)
 
+    print jsw
     # create world from json data
     b2_world = create_world(jsw)
 
@@ -360,8 +361,8 @@ def add_fixture( b2_world_body, jsw, jsw_fixture ):
     :type jsw_fixture: b2Fixture
 
     """
-
-     # create and fill fixture definition
+     
+    # create and fill fixture definition
     fixtureDef = b2.b2FixtureDef()
 
     # Done with issues:
