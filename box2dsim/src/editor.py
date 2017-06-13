@@ -152,7 +152,6 @@ class Joint(object):
 
     def __init__(self):
         
-        self.anchor = (0, 0)
         self.main = dict()
         self.main["type"] = "revolute"
         self.main["name"] = ""
@@ -170,12 +169,18 @@ class Joint(object):
         self.main["refAngle"] = 0
         self.main["upperLimit"] = 0
     
-    def add_anchor(self, point):
-        self.anchor = (point.x(), point.y())
+    def addAnchorA(self, point):
+        self.main["anchorA"] = (point.x(), point.y())
     
-    def add_anchorB(self, point):
+    def addAnchorB(self, point):
         self.main["anchorB"] = (point.x(), point.y())
-            
+     
+    def setBodyA(self, name):
+        self.main["bodyA"] = name
+    
+    def setBodyB(self, name):
+        self.main["bodyB"] = name
+                       
     def serializeForJson(self):
         
         main_serialized = copy.deepcopy(self.main) 
@@ -186,8 +191,8 @@ class Joint(object):
         
         return main_serialized     
   
-def toPoint(list):
-    return QtCore.QPointF(*list)  
+def toPoint(lst):
+    return QtCore.QPointF(*lst)  
 
 class Types:
 
@@ -441,35 +446,48 @@ class DrawingFrame(QtGui.QFrame):
     def mousePressEvent(self, event):
         scaled_pos = self.scalePoint(event.pos())
         if event.button() == QtCore.Qt.LeftButton:
+
             if self.new_shape == True:
+
                 if self.shape_type == Types.POLYGON :
+
                     p = Polygon()
                     p.add_vertex(scaled_pos)
                     self.parent.data_manager.elements["polygons"].append(p)
                     self.prevPoint = event.pos()
+
                 if self.shape_type == Types.CIRCLE :
+
                     c = Circle()
                     c.setCenter(scaled_pos)
                     self.parent.data_manager.elements["circles"].append(c)
+
                 if self.shape_type == Types.JOINT :
+
                     j = Joint()
                     items = self.parent.data_manager.getBodies()
+
                     bodyA, okPressed = QtGui.QInputDialog.getItem(None, "BodyA", 'BodyA', items)
-                    if okPressed: j.main["bodyA"] = bodyA
+                    if okPressed: j.setBodyA(bodyA)
 
                     bodyB, okPressed = QtGui.QInputDialog.getItem(None, "BodyB", 'BodyB', items)
-                    if okPressed: j.main["bodyB"] = bodyB
+                    if okPressed: j.setBodyB(bodyB)
                     
-                    # for p in self.parent.data_manager.elements["polygons"] + self.parent.data_manager.elements["polygons"]: 
-                    #     if p.main["name"] == bodyA:
-                    #         try:
-                    #              j.main["anchorA"] = (scaled_pos.x() - p.main["position"].
-                    # 
-
-
-                    j.add_anchor(scaled_pos)
+                    for b in self.parent.data_manager.elements["polygons"] \
+                            + self.parent.data_manager.elements["circles"]: 
+                        if b.main["name"] == bodyA:
+                            j.main["anchorA"] = (
+                                    scaled_pos.x() - b.main["position"][0],
+                                    scaled_pos.y() - b.main["position"][1] )
+                        elif b.main["name"] == bodyB:
+                            j.main["anchorB"] = (
+                                    scaled_pos.x() - b.main["position"][0],
+                                    scaled_pos.y() - b.main["position"][1] )
+                                                 
                     self.parent.data_manager.elements["joints"].append(j)
-              
+                    self.updateTable()
+                    self.update()
+
                 self.new_shape = False
 
     def mouseMoveEvent(self, event):
@@ -567,7 +585,40 @@ class DrawingFrame(QtGui.QFrame):
                     self.rescalePoint(circle.center()), 
                     self.rescale(circle.radius()), 
                     self.rescale(circle.radius()))
- 
+        
+        joints_length = len(self.parent.data_manager.elements["joints"])
+        for idx, joint in enumerate(self.parent.data_manager.elements["joints"]):
+            
+            if (self.shape_type == Types.JOINT and (idx == self.current_shape 
+                or (self.current_shape<0 and idx == (joints_length -1) ) ) ):
+                self.setPen(painter, highlight=True)
+            else: 
+                self.setPen(painter)
+
+                    
+            for b in self.parent.data_manager.elements["polygons"] \
+                    + self.parent.data_manager.elements["circles"]: 
+                if b.main["name"] == joint.main["bodyA"]:
+                    bodyApos = b.main["position"]
+                elif b.main["name"] ==  joint.main["bodyB"]:
+                    bodyBpos = b.main["position"]
+
+            jcenter = toPoint(
+                    [ bodyApos[0] + joint.main["anchorA"][0],
+                    bodyApos[1] + joint.main["anchorA"][1] ] )
+            jA = toPoint(bodyApos)
+            jB = toPoint(bodyBpos)
+            
+            painter.drawLine(
+                    self.rescalePoint(jcenter), 
+                    self.rescalePoint(jA))
+            painter.drawLine(
+                    self.rescalePoint(jcenter), 
+                    self.rescalePoint(jB))
+            # painter.drawEllipse(
+            #         self.rescalePoint(joint.center()), 
+            #         self.rescale(joint.radius()), 
+            #         self.rescale(joint.radius()))
  
         painter.setPen(QtGui.QPen(self.myPenColor, self.myPenWidth*0.1,
             QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
