@@ -184,9 +184,11 @@ class Joint(object):
     def serializeForJson(self):
         
         main_serialized = copy.deepcopy(self.main) 
-        main_serialized["anchorA"] = {"x":self.main["anchorA"].x(),  
-                                     "y":self.main["anchorA"].y()}
-        main_serialized["anchorB"] = {"x":self.main["anchorB"].x(),  
+        if "anchorA" in main_serialized.keys():
+            main_serialized["anchorA"] = {"x":self.main["anchorA"].x(),  
+                                         "y":self.main["anchorA"].y()}
+        if "anchorB" in main_serialized.keys():
+            main_serialized["anchorB"] = {"x":self.main["anchorB"].x(),  
                                      "y":self.main["anchorB"].y()}
         
         return main_serialized     
@@ -216,6 +218,7 @@ class DataTable(QtGui.QTableWidget):
         self.itemChanged.connect(self.onItemChanged) 
         self.horizontalHeader().hide()
         self.verticalHeader().hide()
+        self.setFixedSize(400, 600)
         
     def setData(self):
  
@@ -271,10 +274,13 @@ class DataManager(object):
         for i in sorted(clean_list, reverse=True):
             del polygons[i]
                     
-        bodies = [ obj.serializeForJson()  
-                  for obj in (polygons + self.elements["circles"]) ]
+        bodies = [ obj.serializeForJson()  for obj in polygons]
+        bodies += [ obj.serializeForJson()  for obj in self.elements["circles"]]
         world["body"] = bodies
         
+        joints = [ obj.serializeForJson()  for obj in self.elements["joints"]]
+        world["joint"] = joints
+
         json_file = open("body2d.json","w")
         json_file.write(json.JSONEncoder(True, True, True, False, False, True).encode(world))
     
@@ -418,6 +424,7 @@ class DrawingFrame(QtGui.QFrame):
             self.prevPoint = None
             self.currPoint = None
             self.current_shape = -1
+            self.parent.glueBar.setVisible(False)
             self.updateTable()
             self.update()
 
@@ -429,6 +436,7 @@ class DrawingFrame(QtGui.QFrame):
             self.currPoint = None
             self.nextPoint = None
             self.current_shape = -1
+            self.parent.glueBar.setVisible(True)
             self.updateTable()
             self.update()
 
@@ -440,23 +448,29 @@ class DrawingFrame(QtGui.QFrame):
             self.currPoint = None
             self.nextPoint = None
             self.current_shape = -1
+            self.parent.glueBar.setVisible(False)
             self.updateTable()
             self.update()
-
+    
+    def switchToGluePlus(self):
+        pass
+    def switchToGlueMinus(self):
+        pass  
+    
     def mousePressEvent(self, event):
         scaled_pos = self.scalePoint(event.pos())
         if event.button() == QtCore.Qt.LeftButton:
 
             if self.new_shape == True:
 
-                if self.shape_type == Types.POLYGON :
+                if self.shape_type == Types.POLYGON and self.parent.addPointsAction.isChecked():
 
                     p = Polygon()
                     p.add_vertex(scaled_pos)
                     self.parent.data_manager.elements["polygons"].append(p)
                     self.prevPoint = event.pos()
 
-                if self.shape_type == Types.CIRCLE :
+                if self.shape_type == Types.CIRCLE:
 
                     c = Circle()
                     c.setCenter(scaled_pos)
@@ -473,17 +487,29 @@ class DrawingFrame(QtGui.QFrame):
                     bodyB, okPressed = QtGui.QInputDialog.getItem(None, "BodyB", 'BodyB', items)
                     if okPressed: j.setBodyB(bodyB)
                     
+                    exists_bodyA = False
+                    exists_bodyB = False
+
                     for b in self.parent.data_manager.elements["polygons"] \
                             + self.parent.data_manager.elements["circles"]: 
                         if b.main["name"] == bodyA:
-                            j.main["anchorA"] = (
+                            exists_bodyA = True
+                            j.main["anchorA"] = QtCore.QPointF(
                                     scaled_pos.x() - b.main["position"][0],
                                     scaled_pos.y() - b.main["position"][1] )
                         elif b.main["name"] == bodyB:
-                            j.main["anchorB"] = (
+                            exists_bodyB = True
+                            j.main["anchorB"] = QtCore.QPointF(
                                     scaled_pos.x() - b.main["position"][0],
                                     scaled_pos.y() - b.main["position"][1] )
-                                                 
+                    
+                    if not exists_bodyA:
+                        del j.main["anchorA"]   
+                        j.main["bodyA"] = None   
+                    if not exists_bodyB:
+                        del j.main["anchorB"] 
+                        j.main["bodyB"] = None   
+                                       
                     self.parent.data_manager.elements["joints"].append(j)
                     self.updateTable()
                     self.update()
@@ -497,7 +523,7 @@ class DrawingFrame(QtGui.QFrame):
     def mouseReleaseEvent(self, event):
         scaled_pos = self.scalePoint(event.pos())
         if event.button() == QtCore.Qt.LeftButton:
-            if self.shape_type == Types.POLYGON :
+            if self.shape_type == Types.POLYGON and self.parent.addPointsAction.isChecked():
                 curr_polygon = self.parent.data_manager.elements["polygons"][self.current_shape]
                 self.currPoint = event.pos()
                 curr_polygon.add_vertex(scaled_pos)
@@ -604,8 +630,9 @@ class DrawingFrame(QtGui.QFrame):
                     bodyBpos = b.main["position"]
 
             jcenter = toPoint(
-                    [ bodyApos[0] + joint.main["anchorA"][0],
-                    bodyApos[1] + joint.main["anchorA"][1] ] )
+                    [ bodyApos[0] + joint.main["anchorA"].x(),
+                    bodyApos[1] + joint.main["anchorA"].y() ] )
+            
             jA = toPoint(bodyApos)
             jB = toPoint(bodyBpos)
             
@@ -697,27 +724,54 @@ class MainWindow(QtGui.QMainWindow):
         nextAction = QtGui.QAction('Next', self)
         nextAction.setShortcut('Right')
         nextAction.triggered.connect(self.drawing_frame.nextShape)   
+        
+        self.addPointsAction = QtGui.QAction('glue+', self)
+        self.addPointsAction.setShortcut('+')
+        self.addPointsAction.setCheckable(True)
+        self.addPointsAction.setChecked(True)
+        self.addPointsAction.triggered.connect(self.drawing_frame.switchToGluePlus)   
+        
+        self.delPointsAction = QtGui.QAction('glue-', self)
+        self.delPointsAction.setShortcut('-')
+        self.delPointsAction.setCheckable(True)
+        self.delPointsAction.triggered.connect(self.drawing_frame.switchToGlueMinus)          
               
         shapes = QtGui.QActionGroup(self)
         shapes.addAction(polygonAction)
         shapes.addAction(circleAction)
         shapes.addAction(jointAction)
         shapes.setExclusive(True)
+        
+        self.actionsGroup = QtGui.QActionGroup(self)
+        self.actionsGroup.addAction(self.addPointsAction)
+        self.actionsGroup.addAction(self.delPointsAction)
+
+        
 
         toolBar = QtGui.QToolBar(self)
         toolBar.addAction(exitAction)
+        toolBar.addSeparator()
         toolBar.addAction(prevAction)
         toolBar.addAction(nextAction)
+        toolBar.addSeparator()
         toolBar.addAction(newAction)
         toolBar.addAction(deleteAction)
         toolBar.addAction(saveAction)
         toolBar.addAction(loadAction)
+        toolBar.addSeparator()
         toolBar.addAction(polygonAction)
         toolBar.addAction(circleAction)
-        toolBar.addAction(jointAction)
-        
+        toolBar.addAction(jointAction) 
         self.addToolBar(toolBar)
         
+        self.addToolBarBreak()
+        self.workBar = QtGui.QToolBar(self)
+        self.glueBar = QtGui.QToolBar(self)
+        self.glueBar.addAction(self.addPointsAction)
+        self.glueBar.addAction(self.delPointsAction)
+        self.addToolBar(self.glueBar)
+        self.addToolBar(self.workBar)
+
         layout = QtGui.QHBoxLayout()
         self.worldTable.setLayout(layout)
         self.worldTable.layout().addWidget(DataTable(self.data_manager.world))
