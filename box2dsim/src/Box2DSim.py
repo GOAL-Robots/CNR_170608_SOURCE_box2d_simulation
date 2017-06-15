@@ -1,5 +1,6 @@
 import JsonToPyBox2D as json2d
 import utils as b2u
+from PID import PID
 
 class  Box2DSim(object):
     """ 2D physics using box2d and a json conf file
@@ -24,7 +25,7 @@ class  Box2DSim(object):
 
         world, bodies, joints = \
                 json2d.createWorldFromJson(world_file)
-        
+        print joints
         self.dt = dt
         self.vel_iters = vel_iters
         self.pos_iters = pos_iters
@@ -49,37 +50,45 @@ class TestPlotter:
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111, aspect="equal")
         self.plots = dict()
+        self.jointPlots = dict()
         for key in self.sim.bodies.keys() :
             self.plots[key], = self.ax.plot(0,0, color=[0,0,0])
-        
+        for key in self.sim.joints.keys() :
+            self.jointPlots[key], = self.ax.plot(0,0, lw=4, color=[1,0,0])       
         self.ax.set_xlim([0,30])
         self.ax.set_ylim([0,30])
 
 
     def step(self) :
        
-        for key in self.plots.keys():
+        for key, body_plot in self.plots.iteritems():
             body = self.sim.bodies[key]
-            body_plot = self.plots[key]
             vercs = np.vstack(body.fixtures[0].shape.vertices)
             vercs = vercs[ np.hstack([np.arange(len(vercs)), 0]) ]
             data = np.vstack([ body.GetWorldPoint(vercs[x]) 
                 for x in xrange(len(vercs))])
             body_plot.set_data(*data.T)
-        
+                   
+#         for key, joint_plot in self.jointPlots.iteritems():
+#             joint = self.sim.joints[key]
+#             center = sim.bodies[joint["bodyA"]].position - joint.__GetBodyA().position
+#             print center
+#             body_plot.set_data(*center)
+             
+            
         self.fig.canvas.draw()
 
 if __name__ == "__main__":
     
-    sim = Box2DSim("body2d.json")
+    sim = Box2DSim("copy.json")
     plotter = TestPlotter(sim)
     
     plt.ion()
 
-    for t in range(100):
+    for t in range(1000):
         
         sim.step()
         print t
         plotter.step()
-        plt.pause(0.0001)
+        plt.pause(0.01)
    

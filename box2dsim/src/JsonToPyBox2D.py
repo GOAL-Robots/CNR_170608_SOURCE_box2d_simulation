@@ -73,7 +73,7 @@ def add_joints(b2_world, jsw):
         # add joints to world
         for joint in jsw["joint"]:
             key, ref = add_joint(b2_world, jsw, joint)
-            joint[key] = ref
+            joint_refs[key] = ref
 
     return joint_refs
 

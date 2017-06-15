@@ -36,7 +36,7 @@ class World(object):
         main_serialized["gravity"] = { 
              "x":self.main["gravity"][0],
              "y":self.main["gravity"][1] }
- 
+
         return main_serialized
     
 class Body(object):
@@ -243,7 +243,8 @@ class DataTable(QtGui.QTableWidget):
             
     def onItemChanged(self, item):
         name = self.item(item.row(), 0).text()
-        self.obj.main[name] = item.text()
+        self.obj.main[name] = eval(item.text())
+        print self.obj.main[name]
         
 class DataManager(object):
 
@@ -265,7 +266,7 @@ class DataManager(object):
         return bodies
 
 
-    def makeJson(self):
+    def makeJson(self, filename=None):
         
         world = self.world.serializeForJson()
         
@@ -290,20 +291,20 @@ class DataManager(object):
             joint["bodyB"] = bodyIndices[joint["bodyB"]]
         world["joint"] = joints
 
-        json_file = open("body2d.json","w")
+        if filename is None:
+            filename = "base.json"
+        json_file = open(filename+".json","w")
         json_file.write(json.JSONEncoder(True, True, True, False, False, True).encode(world))
-    
-    
-        
-
+     
 class DrawingFrame(QtGui.QFrame):
 
-    def __init__(self, tables, app, parent=None):
+    def __init__(self, app, parent=None):
         
         super(DrawingFrame, self).__init__(parent)
         self.main_app = app
-        self.tables = tables
         self.parent = parent
+        self.tables = self.parent.tables
+        self.worldTable = self.parent.worldTable
     
         self.myPenWidth = 2
         self.myPenColor = QtCore.Qt.black
@@ -354,7 +355,11 @@ class DrawingFrame(QtGui.QFrame):
             if self.tables.layout().count() > 0:
                 self.tables.layout().removeItem(self.tables.layout().itemAt(0))        
             self.tables.layout().addWidget(DataTable(curr_obj))
-
+        if self.worldTable.layout().count() > 0:
+            self.worldTable.layout().removeItem(self.worldTable.layout().itemAt(0))           
+        self.worldTable.layout().addWidget(DataTable(self.parent.data_manager.world))
+        self.parent.resize_all()
+        
     def setPen(self, painter, highlight=False):
         
         curr_pen = self.myPenColor
@@ -498,15 +503,16 @@ class DrawingFrame(QtGui.QFrame):
                             + self.parent.data_manager.elements["circles"]: 
                         if b.main["name"] == bodyA:
                             exists_bodyA = True
+                            
                             j.main["anchorA"] = QtCore.QPointF(
-                                    scaled_pos.x() - b.main["position"][0],
-                                    scaled_pos.y() - b.main["position"][1] )
+                                    scaled_pos.x() - b.main["position"][0],   
+                                    scaled_pos.y() - b.main["position"][1])                        
                         elif b.main["name"] == bodyB:
                             exists_bodyB = True
                             j.main["anchorB"] = QtCore.QPointF(
-                                    scaled_pos.x() - b.main["position"][0],
-                                    scaled_pos.y() - b.main["position"][1] )
-                    
+                                    scaled_pos.x() - b.main["position"][0],   
+                                    scaled_pos.y() - b.main["position"][1]) 
+                                                 
                     if not exists_bodyA:
                         del j.main["anchorA"]   
                         j.main["bodyA"] = None   
@@ -665,7 +671,10 @@ class DrawingFrame(QtGui.QFrame):
             painter.drawLine(
                     self.rescalePoint(jcenter), 
                     self.rescalePoint(jB))
-
+            painter.drawEllipse(
+                    self.rescalePoint(jcenter), 
+                    self.myPenWidth*4,
+                    self.myPenWidth*4)
  
         painter.setPen(QtGui.QPen(self.myPenColor, self.myPenWidth*0.1,
             QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
@@ -698,12 +707,9 @@ class MainWindow(QtGui.QMainWindow):
            
         self.worldTable = QtGui.QWidget(self)
         self.tables = QtGui.QWidget(self)
-        self.drawing_frame = DrawingFrame(self.tables, app,  self)
-        self.worldTable.resize(300,600)
-        self.tables.resize(300,600)
-        self.drawing_frame.setFixedSize(600,600)
-        self.resize(1200, 600)      
-  
+        self.drawing_frame = DrawingFrame(app,  self)
+        self.resize_all()
+        
         exitAction = QtGui.QAction('Exit', self)
         exitAction.setShortcut('Q')
         exitAction.triggered.connect(self.close)
@@ -762,9 +768,7 @@ class MainWindow(QtGui.QMainWindow):
         
         self.actionsGroup = QtGui.QActionGroup(self)
         self.actionsGroup.addAction(self.addPointsAction)
-        self.actionsGroup.addAction(self.delPointsAction)
-
-        
+        self.actionsGroup.addAction(self.delPointsAction)   
 
         toolBar = QtGui.QToolBar(self)
         toolBar.addAction(exitAction)
@@ -800,14 +804,24 @@ class MainWindow(QtGui.QMainWindow):
         self.setWindowTitle("")
         #self.resize(self.layout.sizeHint())
     
+    def resize_all(self):
+        self.worldTable.resize(300,600)
+        self.tables.resize(300,600)
+        self.drawing_frame.setFixedSize(600,600)
+        self.resize(1200, 600) 
+    
     def save(self):
-        sfile = open("data_dump", "w")
+        filename = "copy"
+        sfile = open(filename+".dump", "w")
         cPickle.dump(self.data_manager, sfile)
-        self.data_manager.makeJson()
+        self.data_manager.makeJson(filename)
     
     def load(self):
-        lfile = open("data_dump", "r")
+        filename = "copy"
+        lfile = open(filename+".dump", "r")
         self.data_manager = cPickle.load(lfile)
+        self.drawing_frame.updateTable()
+        self.drawing_frame.update()
 
 if __name__ == '__main__':
 
