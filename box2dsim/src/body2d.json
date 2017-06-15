@@ -1,0 +1,141 @@
+{
+ "body": [
+  {
+   "angle": 0.0, 
+   "name": "AAA", 
+   "linearDamping": 0.0, 
+   "fixture": [
+    {
+     "filter-groupIndex": 1, 
+     "name": "", 
+     "density": 1, 
+     "friction": 0.2, 
+     "filter-maskBits": 1, 
+     "filter-categoryBits": 1, 
+     "restitution": 0.1, 
+     "sensor": true, 
+     "polygon": {
+      "vertices": {
+       "y": [
+        14.566666603088379, 
+        14.533333778381348, 
+        2.1666667461395264, 
+        2.2333333492279053
+       ], 
+       "x": [
+        5.199999809265137, 
+        4.0333333015441895, 
+        3.5, 
+        5.0
+       ]
+      }
+     }
+    }
+   ], 
+   "allowSleep": true, 
+   "angularVelocity": 0.0, 
+   "linearVelocity": {
+    "y": 0.0, 
+    "x": 0.0
+   }, 
+   "awake": true, 
+   "angularDamping": 0.0, 
+   "bullet": false, 
+   "position": {
+    "y": 8.118179321289062, 
+    "x": 4.425521373748779
+   }, 
+   "type": 2, 
+   "fixedRotation": false
+  }, 
+  {
+   "angle": 0.0, 
+   "name": "BBB", 
+   "linearDamping": 0.0, 
+   "fixture": [
+    {
+     "filter-groupIndex": 1, 
+     "name": "", 
+     "density": 1, 
+     "friction": 0.2, 
+     "filter-maskBits": 1, 
+     "filter-categoryBits": 1, 
+     "restitution": 0.1, 
+     "sensor": true, 
+     "polygon": {
+      "vertices": {
+       "y": [
+        13.699999809265137, 
+        15.033333778381348, 
+        15.699999809265137, 
+        15.766666412353516, 
+        14.5, 
+        13.366666793823242
+       ], 
+       "x": [
+        16.766666412353516, 
+        16.266666412353516, 
+        11.300000190734863, 
+        6.633333206176758, 
+        3.933333396911621, 
+        4.066666603088379
+       ]
+      }
+     }
+    }
+   ], 
+   "allowSleep": true, 
+   "angularVelocity": 0.0, 
+   "linearVelocity": {
+    "y": 0.0, 
+    "x": 0.0
+   }, 
+   "awake": true, 
+   "angularDamping": 0.0, 
+   "bullet": false, 
+   "position": {
+    "y": 14.510387420654297, 
+    "x": 10.052855491638184
+   }, 
+   "type": 2, 
+   "fixedRotation": false
+  }
+ ], 
+ "joint": [
+  {
+   "name": "", 
+   "lowerLimit": 0, 
+   "bodyA": 0, 
+   "jointSpeed": 0, 
+   "bodyB": 1, 
+   "refAngle": 0, 
+   "collideConnected": true, 
+   "maxMotorTorque": 0, 
+   "anchorB": {
+    "y": -0.6593735376993823, 
+    "x": -5.586844571431477
+   }, 
+   "enableLimit": true, 
+   "motorSpeed": 0, 
+   "anchorA": {
+    "y": 5.61515401204427, 
+    "x": 0.44114529291788784
+   }, 
+   "upperLimit": 0, 
+   "type": "revolute", 
+   "enableMotor": true
+  }
+ ], 
+ "gravity": {
+  "y": -9, 
+  "x": 0
+ }, 
+ "allowSleep": true, 
+ "positionIterations": 2, 
+ "velocityIterations": 6, 
+ "stepsPerSecond": 10, 
+ "autoClearForces": true, 
+ "continuousPhysics": true, 
+ "subStepping": false, 
+ "warmStarting": true
+}
