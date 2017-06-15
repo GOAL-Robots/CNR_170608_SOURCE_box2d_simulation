@@ -14,6 +14,10 @@ from matplotlib.lines import VertexSelector
 def distance(p1, p2):
     return math.sqrt( (p2.x()-p1.x())**2 + (p2.y()-p1.y())**2)
 
+def clearLayout(layout):
+     for i in reversed(range(layout.count())): 
+        layout.itemAt(i).widget().setParent(None)
+
 class World(object):
     
     def __init__(self):
@@ -321,11 +325,15 @@ class DrawingFrame(QtGui.QFrame):
         self.myHighlightPenColor = QtCore.Qt.red
 
         self.new_shape = True
-        self.shape_type = Types.POLYGON 
         self.current_shape = -1
-
         self.edit = False
-       
+        self.shape_type = Types.POLYGON        
+        self.glue_type = GlueType.ADD
+        self.poly_mode = PolyMode.MANUAL
+        self.regular_radius = 1.0
+        self.regular_vertices = 3
+        self.regular_angle = 0
+ 
         self.prevPoint = None
         self.currPoint = None
 
@@ -358,17 +366,19 @@ class DrawingFrame(QtGui.QFrame):
     def updateTable(self):
         curr_obj = self.getCurrObj()
         
-        if  curr_obj is not None:
-            if self.tables.layout() is None:
-                layout = QtGui.QHBoxLayout()
-                self.tables.setLayout(layout)
-                
-            if self.tables.layout().count() > 0:
-                self.tables.layout().removeItem(self.tables.layout().itemAt(0))        
+        if self.tables.layout() is not None:
+            clearLayout(self.tables.layout())  
+        layout = QtGui.QHBoxLayout()
+        self.tables.setLayout(layout)    
+        if curr_obj is not None:
             self.tables.layout().addWidget(DataTable(curr_obj))
-        if self.worldTable.layout().count() > 0:
-            self.worldTable.layout().removeItem(self.worldTable.layout().itemAt(0))           
+    
+        if self.worldTable.layout() is not None:
+            clearLayout(self.worldTable.layout())    
+        layout = QtGui.QHBoxLayout()
+        self.worldTable.setLayout(layout)    
         self.worldTable.layout().addWidget(DataTable(self.parent.data_manager.world))
+        
         self.parent.resize_all()
         
     def setPen(self, painter, highlight=False):
@@ -414,6 +424,7 @@ class DrawingFrame(QtGui.QFrame):
             msgBox = QtGui.QMessageBox()
             msgBox.setText("There is no component left")
             msgBox.exec_()
+            self.newShape()
         
         self.prevPoint = None
         self.currPoint = None
@@ -459,7 +470,9 @@ class DrawingFrame(QtGui.QFrame):
             self.prevPoint = None
             self.currPoint = None
             self.current_shape = -1
-            self.parent.glueBar.setVisible(False)
+            self.parent.manualBar.setVisible(False)
+            self.parent.regularBar.setVisible(False)
+            self.parent.modifyBar.setVisible(False)
             self.updateTable()
             self.update()
 
@@ -471,7 +484,9 @@ class DrawingFrame(QtGui.QFrame):
             self.currPoint = None
             self.nextPoint = None
             self.current_shape = -1
-            self.parent.glueBar.setVisible(True)
+            self.parent.manualBar.setVisible(True)
+            self.parent.regularBar.setVisible(True)
+            self.parent.modifyBar.setVisible(True)
             self.updateTable()
             self.update()
 
@@ -483,7 +498,9 @@ class DrawingFrame(QtGui.QFrame):
             self.currPoint = None
             self.nextPoint = None
             self.current_shape = -1
-            self.parent.glueBar.setVisible(False)
+            self.parent.manualBar.setVisible(False)
+            self.parent.regularBar.setVisible(False)
+            self.parent.modifyBar.setVisible(False)
             self.updateTable()
             self.update()
     
@@ -493,27 +510,84 @@ class DrawingFrame(QtGui.QFrame):
     
     def onGlueMinus(self):
         self.glue_type = GlueType.DELETE
-
     
+    def onPolyModeRegular(self):
+        if self.poly_mode != PolyMode.REGULAR:
+            self.poly_mode = PolyMode.REGULAR
+            self.parent.vrtsBox.setEnabled(True)          
+            self.parent.angleBox.setEnabled(True)          
+            self.parent.radiusBox.setEnabled(True)          
+            self.parent.radiusLabel.setEnabled(True)          
+            self.parent.angleLabel.setEnabled(True)          
+            self.parent.addPointsAction.setEnabled(False)           
+            self.parent.delPointsAction.setEnabled(False)           
+            self.newShape()
+
+    def onPolyModeManual(self):
+        if self.poly_mode != PolyMode.MANUAL:
+            self.poly_mode = PolyMode.MANUAL
+            self.parent.vrtsBox.setEnabled(False)    
+            self.parent.angleBox.setEnabled(False)          
+            self.parent.radiusBox.setEnabled(False) 
+            self.parent.radiusLabel.setEnabled(False)          
+            self.parent.angleLabel.setEnabled(False)          
+            self.parent.addPointsAction.setEnabled(True)           
+            self.parent.delPointsAction.setEnabled(True)         
+            self.newShape()
+    
+    def onVrtxBoxChanged(self, text):
+        self.regular_vertices = eval(self.parent.vrtsBox.currentText())
+    
+    def onRadiusBoxChanged(self):
+        if len(self.parent.radiusBox.text()) > 0:
+            self.regular_radius = eval(self.parent.radiusBox.text())
+            
+    def onAngleBoxChanged(self):
+        if len(self.parent.angleBox.text()) > 0:
+            self.regular_angle = eval(self.parent.angleBox.text())
+       
     def mousePressEvent(self, event):
         scaled_pos = self.scalePoint(event.pos())
         if event.button() == QtCore.Qt.LeftButton:
-
             if self.new_shape == True:
-                if self.shape_type == Types.POLYGON and self.glue_type==GlueType.ADD:
+                if self.shape_type == Types.POLYGON: 
+                    if self.poly_mode == PolyMode.REGULAR:
+                        p = Polygon()
+                        angle = 2*b2.b2_pi/float(self.regular_vertices)
+                        init_angle = self.regular_angle*(b2.b2_pi)/180.0
+                        for i in range(self.regular_vertices):
+                            vertex = QtCore.QPointF(
+                                scaled_pos.x() + self.regular_radius*math.cos(init_angle + i*angle),
+                                scaled_pos.y() + self.regular_radius*math.sin(init_angle + i*angle),
+                                )
+                            p.add_vertex(vertex)  
+                        
+                        self.parent.data_manager.elements["polygons"].append(p)
+                        self.newShape()
 
-                    p = Polygon()
-                    p.add_vertex(scaled_pos)
-                    self.parent.data_manager.elements["polygons"].append(p)
-                    self.prevPoint = event.pos()
+                    elif ( self.glue_type == GlueType.ADD and 
+                         self.poly_mode == PolyMode.MANUAL):
+                        
+                        # Manual add points  
+
+                        p = Polygon()
+                        p.add_vertex(scaled_pos)
+                        self.parent.data_manager.elements["polygons"].append(p)
+                        self.prevPoint = event.pos()
+                        
+                        self.new_shape = False
 
                 if self.shape_type == Types.CIRCLE:
+
+                    # add circles  
 
                     c = Circle()
                     c.setCenter(scaled_pos)
                     self.parent.data_manager.elements["circles"].append(c)
 
                 if self.shape_type == Types.JOINT :
+                    
+                    # add joints  
 
                     j = Joint()
                     items = self.parent.data_manager.getBodies()
@@ -552,24 +626,29 @@ class DrawingFrame(QtGui.QFrame):
                     self.updateTable()
                     self.update()
 
-                self.new_shape = False
-                
-            elif self.shape_type == Types.POLYGON and self.glue_type==GlueType.DELETE:
+              
+            elif (self.shape_type == Types.POLYGON and 
+                  self.glue_type==GlueType.DELETE and 
+                  self.poly_mode == PolyMode.MANUAL):
+                           
+                # Manual delete points  
 
-                curr_polygon = self.parent.data_manager.elements["polygons"][self.current_shape]
-                print curr_polygon.vertices()
-                for i, v in enumerate(curr_polygon.vertices()):
-                    print v
-                    if distance(toPoint(v), scaled_pos) < 0.4:
-                        curr_polygon.del_vertex(i)
-                
-                # test   
-                if len(curr_polygon.vertices())>=3 :
-                    b2polygon = b2.b2PolygonShape(vertices=curr_polygon.to_b2Vec2())   
-                      
-                    if b2polygon is not None and len(b2polygon.vertices)>2:
-                        curr_polygon.from_b2Vec2(b2polygon.vertices) 
-                        curr_polygon.setPosition(b2polygon.centroid)
+                polygons = self.parent.data_manager.elements["polygons"]
+                if len(polygons)>0:
+                    curr_polygon = polygons[self.current_shape]
+                    for i, v in enumerate(curr_polygon.vertices()):
+                        if distance(toPoint(v), scaled_pos) < 0.4:
+                            curr_polygon.del_vertex(i)
+                    if len(curr_polygon.vertices()) == 0:
+                           self.newShape() 
+                    
+                    # test   
+                    if len(curr_polygon.vertices())>=3 :
+                        b2polygon = b2.b2PolygonShape(vertices=curr_polygon.to_b2Vec2())   
+                          
+                        if b2polygon is not None and len(b2polygon.vertices)>2:
+                            curr_polygon.from_b2Vec2(b2polygon.vertices) 
+                            curr_polygon.setPosition(b2polygon.centroid)
 
 
     def mouseMoveEvent(self, event):
@@ -579,21 +658,31 @@ class DrawingFrame(QtGui.QFrame):
     def mouseReleaseEvent(self, event):
         scaled_pos = self.scalePoint(event.pos())
         if event.button() == QtCore.Qt.LeftButton:
-            if self.shape_type == Types.POLYGON and self.glue_type==GlueType.ADD:
-                curr_polygon = self.parent.data_manager.elements["polygons"][self.current_shape]
-                self.currPoint = event.pos()
-                curr_polygon.add_vertex(scaled_pos)
+            if (self.shape_type == Types.POLYGON and 
+                self.poly_mode == PolyMode.MANUAL and
+                self.glue_type==GlueType.ADD):
+                   
+                polygons =  self.parent.data_manager.elements["polygons"]            
                 
-                # test 
-                if len(curr_polygon.vertices())>=3 :
-                    b2polygon = b2.b2PolygonShape(vertices=curr_polygon.to_b2Vec2())   
-                      
-                    if b2polygon is not None and len(b2polygon.vertices)>2:
-                        curr_polygon.from_b2Vec2(b2polygon.vertices) 
-                        curr_polygon.setPosition(b2polygon.centroid)
-                
-                if len(curr_polygon.vertices())==1:
-                    self.deleteShape()
+                if len(polygons) == 0:
+                    self.newShape()
+                else:
+                    
+                    curr_polygon = polygons[self.current_shape]
+                    if len(curr_polygon.vertices()) >= 2:
+                        if curr_polygon.vertices()[-1] == curr_polygon.vertices()[-2]:
+                            curr_polygon.del_vertex(-1)
+                                
+                    self.currPoint = event.pos()
+                    curr_polygon.add_vertex(scaled_pos)
+                    
+                    # test 
+                    if len(curr_polygon.vertices())>=3 :
+                        b2polygon = b2.b2PolygonShape(vertices=curr_polygon.to_b2Vec2())   
+                          
+                        if b2polygon is not None and len(b2polygon.vertices)>2:
+                            curr_polygon.from_b2Vec2(b2polygon.vertices) 
+                            curr_polygon.setPosition(b2polygon.centroid)             
 
             if self.shape_type == Types.CIRCLE :
                 if len(self.parent.data_manager.elements["circles"]) > 0:
@@ -786,15 +875,38 @@ class MainWindow(QtGui.QMainWindow):
         self.delPointsAction.setCheckable(True)
         self.delPointsAction.triggered.connect(self.drawing_frame.onGlueMinus)         
    
-        self.manualPointsAction = QtGui.QAction('Manual', self)
-        self.manualPointsAction.setShortcut('M')
-        self.manualPointsAction.setCheckable(True)
-        self.manualPointsAction.setChecked(True)
-        self.regularPointsAction = QtGui.QAction('Regular', self)
-        self.regularPointsAction.setShortcut('R')
-        self.regularPointsAction.setCheckable(True)
+        self.manualPolyModeAction = QtGui.QAction('Manual', self)
+        self.manualPolyModeAction.setShortcut('M')
+        self.manualPolyModeAction.setCheckable(True)
+        self.manualPolyModeAction.setChecked(True)
+        self.manualPolyModeAction.triggered.connect(self.drawing_frame.onPolyModeManual)         
+
+        self.regularPolyModeAction = QtGui.QAction('Regular', self)
+        self.regularPolyModeAction.setShortcut('R')
+        self.regularPolyModeAction.setCheckable(True)
+        self.regularPolyModeAction.triggered.connect(self.drawing_frame.onPolyModeRegular)         
         
-        self.delPointsAction.setCheckable(True)            
+        self.vrtsBox = QtGui.QComboBox(self)
+        self.vrtsBox.addItems(["%d" % x for x in range(3,17) ])
+        self.vrtsBox.currentIndexChanged.connect(self.drawing_frame.onVrtxBoxChanged)
+        self.vrtsBox.setEnabled(False)    
+        self.angleBox = QtGui.QLineEdit(self)
+        validator = QtGui.QIntValidator()
+        self.angleBox.setValidator(validator)
+        self.angleBox.setMaxLength(4)   
+        self.angleBox.setEnabled(False)    
+        self.angleBox.textChanged.connect(self.drawing_frame.onAngleBoxChanged)
+        self.angleLabel = QtGui.QLabel("angle")
+        self.angleLabel.setEnabled(False)    
+        self.radiusBox = QtGui.QLineEdit(self)
+        validator = QtGui.QIntValidator()
+        self.radiusBox.setValidator(validator)
+        self.radiusBox.setMaxLength(4)   
+        self.radiusBox.setEnabled(False)    
+        self.radiusBox.textChanged.connect(self.drawing_frame.onRadiusBoxChanged)
+        self.radiusLabel = QtGui.QLabel("radius")
+        self.radiusLabel.setEnabled(False)    
+
         shapes = QtGui.QActionGroup(self)
         shapes.addAction(polygonAction)
         shapes.addAction(circleAction)
@@ -806,8 +918,8 @@ class MainWindow(QtGui.QMainWindow):
         self.actionsGroup.addAction(self.delPointsAction)   
         
         self.polyModeGroup = QtGui.QActionGroup(self)
-        self.polyModeGroup.addAction(self.manualPointsAction)
-        self.polyModeGroup.addAction(self.regularPointsAction)
+        self.polyModeGroup.addAction(self.manualPolyModeAction)
+        self.polyModeGroup.addAction(self.regularPolyModeAction)
 
 
         toolBar = QtGui.QToolBar(self)
@@ -825,20 +937,27 @@ class MainWindow(QtGui.QMainWindow):
         toolBar.addAction(circleAction)
         toolBar.addAction(jointAction) 
         toolBar.addSeparator()
-        
         self.addToolBar(toolBar)
         self.addToolBarBreak()
         
-        self.glueBar = QtGui.QToolBar(self)
-        self.glueBar.addAction(self.addPointsAction)
-        self.glueBar.addAction(self.delPointsAction)
-        self.addToolBar(self.glueBar)
+        self.manualBar = QtGui.QToolBar(self)
+        self.manualBar.addAction(self.manualPolyModeAction)
+        self.manualBar.addAction(self.addPointsAction)
+        self.manualBar.addAction(self.delPointsAction)
+        self.addToolBar(self.manualBar)
           
-        self.polyModeBar = QtGui.QToolBar(self)
-        self.polyModeBar.addAction(self.manualPointsAction)
-        self.polyModeBar.addAction(self.regularPointsAction)
-        self.addToolBar(self.polyModeBar)
-              
+        self.regularBar = QtGui.QToolBar(self)
+        self.regularBar.addAction(self.regularPolyModeAction)
+        self.regularBar.addWidget(self.vrtsBox)
+        self.regularBar.addWidget(self.angleLabel)
+        self.regularBar.addWidget(self.angleBox)
+        self.regularBar.addWidget(self.radiusLabel)
+        self.regularBar.addWidget(self.radiusBox)
+        self.addToolBar(self.regularBar)
+               
+        self.modifyBar = QtGui.QToolBar(self)
+        self.addToolBar(self.modifyBar)
+
         layout = QtGui.QHBoxLayout()
         self.worldTable.setLayout(layout)
         self.worldTable.layout().addWidget(DataTable(self.data_manager.world))

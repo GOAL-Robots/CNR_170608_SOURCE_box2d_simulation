@@ -3,7 +3,7 @@ from Box2D import *
 import numpy as np
 import sys
 
-REMOTE = True
+REMOTE = False
 
 if REMOTE: 
     import matplotlib
