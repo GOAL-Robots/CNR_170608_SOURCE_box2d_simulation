@@ -68,14 +68,7 @@ class TestPlotter:
             data = np.vstack([ body.GetWorldPoint(vercs[x]) 
                 for x in xrange(len(vercs))])
             body_plot.set_data(*data.T)
-                   
-#         for key, joint_plot in self.jointPlots.iteritems():
-#             joint = self.sim.joints[key]
-#             center = sim.bodies[joint["bodyA"]].position - joint.__GetBodyA().position
-#             print center
-#             body_plot.set_data(*center)
-             
-            
+                            
         self.fig.canvas.draw()
 
 if __name__ == "__main__":

@@ -206,6 +206,16 @@ class Types:
     CIRCLE = 2
     JOINT = 3
 
+class GlueType:
+
+    ADD = 1
+    DELETE = 2
+
+class PolyMode:
+     
+    MANUAL = 1
+    REGULAR = 2   
+
 
 class DataTable(QtGui.QTableWidget):
     def __init__(self, obj):
@@ -323,6 +333,7 @@ class DrawingFrame(QtGui.QFrame):
         palette.setColor(self.backgroundRole(), QtGui.QColor( 230, 230, 255 ) );
         self.setPalette(palette)
         self.setAutoFillBackground(True)
+        self.glue_type = GlueType.ADD
         
         self.WINDOW_BOTTOM = 0.0 
         self.WINDOW_LEFT = 0.0
@@ -384,15 +395,25 @@ class DrawingFrame(QtGui.QFrame):
         self.update()
       
     def deleteShape(self):
+
         container = None
-        if self.shape_type == Types.POLYGON:
-            container = self.parent.data_manager.elements["polygons"]
-        elif self.shape_type == Types.CIRCLE:
-            container = self.parent.data_manager.elements["circles"]
-        elif self.shape_type == Types.JOINT:
-            container = self.parent.data_manager.elements["joints"]
         
-        del container[self.current_shape]
+        if self.shape_type == Types.POLYGON:
+            if len(self.parent.data_manager.elements["polygons"])>0:
+                container = self.parent.data_manager.elements["polygons"]
+        elif self.shape_type == Types.CIRCLE:
+            if len(self.parent.data_manager.elements["circles"])>0:
+                container = self.parent.data_manager.elements["circles"]
+        elif self.shape_type == Types.JOINT:
+            if len(self.parent.data_manager.elements["joints"])>0:
+                container = self.parent.data_manager.elements["joints"]
+        
+        if container is not None:
+            del container[self.current_shape]
+        else:    
+            msgBox = QtGui.QMessageBox()
+            msgBox.setText("There is no component left")
+            msgBox.exec_()
         
         self.prevPoint = None
         self.currPoint = None
@@ -431,7 +452,7 @@ class DrawingFrame(QtGui.QFrame):
         self.updateTable()
         self.update()
     
-    def switchToCircles(self):
+    def onCircles(self):
         if self.shape_type != Types.CIRCLE:
             self.shape_type = Types.CIRCLE            
             self.new_shape = True
@@ -442,7 +463,7 @@ class DrawingFrame(QtGui.QFrame):
             self.updateTable()
             self.update()
 
-    def switchToPolygons(self):
+    def onPolygons(self):
         if self.shape_type != Types.POLYGON:
             self.shape_type = Types.POLYGON
             self.new_shape = True
@@ -454,7 +475,7 @@ class DrawingFrame(QtGui.QFrame):
             self.updateTable()
             self.update()
 
-    def switchToJoints(self):
+    def onJoints(self):
         if self.shape_type != Types.JOINT:
             self.shape_type = Types.JOINT
             self.new_shape = True
@@ -466,13 +487,20 @@ class DrawingFrame(QtGui.QFrame):
             self.updateTable()
             self.update()
     
+    def onGluePlus(self):
+        self.glue_type = GlueType.ADD
+
+    
+    def onGlueMinus(self):
+        self.glue_type = GlueType.DEL
+
+    
     def mousePressEvent(self, event):
         scaled_pos = self.scalePoint(event.pos())
         if event.button() == QtCore.Qt.LeftButton:
 
             if self.new_shape == True:
-                if self.shape_type == Types.POLYGON and self.parent.addPointsAction.isChecked():
-                    print "glue+"
+                if self.shape_type == Types.POLYGON and self.glue_type==GlueType.ADD:
 
                     p = Polygon()
                     p.add_vertex(scaled_pos)
@@ -526,7 +554,7 @@ class DrawingFrame(QtGui.QFrame):
 
                 self.new_shape = False
                 
-            elif self.shape_type == Types.POLYGON and self.parent.delPointsAction.isChecked():
+            elif self.shape_type == Types.POLYGON and self.glue_type==GlueType.ADD:
                 print "glue-"
 
                 curr_polygon = self.parent.data_manager.elements["polygons"][self.current_shape]
@@ -552,7 +580,7 @@ class DrawingFrame(QtGui.QFrame):
     def mouseReleaseEvent(self, event):
         scaled_pos = self.scalePoint(event.pos())
         if event.button() == QtCore.Qt.LeftButton:
-            if self.shape_type == Types.POLYGON and self.parent.addPointsAction.isChecked():
+            if self.shape_type == Types.POLYGON and self.glue_type==GlueType.ADD:
                 curr_polygon = self.parent.data_manager.elements["polygons"][self.current_shape]
                 self.currPoint = event.pos()
                 curr_polygon.add_vertex(scaled_pos)
@@ -718,35 +746,32 @@ class MainWindow(QtGui.QMainWindow):
         polygonAction.setShortcut('P')
         polygonAction.setCheckable(True)
         polygonAction.setChecked(True)
-        polygonAction.triggered.connect(self.drawing_frame.switchToPolygons)         
+        polygonAction.triggered.connect(self.drawing_frame.onPolygons)         
         circleAction = QtGui.QAction('Circle', self)
         circleAction.setShortcut('C')
         circleAction.setCheckable(True)
-        circleAction.triggered.connect(self.drawing_frame.switchToCircles)         
+        circleAction.triggered.connect(self.drawing_frame.onCircles)         
         jointAction = QtGui.QAction('Joint', self)
         jointAction.setShortcut('C')
         jointAction.setCheckable(True)
-        jointAction.triggered.connect(self.drawing_frame.switchToJoints)         
+        jointAction.triggered.connect(self.drawing_frame.onJoints)         
+        
         newAction = QtGui.QAction('New', self)
         newAction.setShortcut('N')
-        newAction.triggered.connect(self.drawing_frame.newShape)  
-          
+        newAction.triggered.connect(self.drawing_frame.newShape)    
         deleteAction = QtGui.QAction('Delete', self)
         deleteAction.setShortcut('Delete')
         deleteAction.triggered.connect(self.drawing_frame.deleteShape)  
-        
         saveAction = QtGui.QAction('Save', self)
         saveAction.setShortcut('S')
-        saveAction.triggered.connect(self.save)  
-        
+        saveAction.triggered.connect(self.save)     
         loadAction = QtGui.QAction('Load', self)
         loadAction.setShortcut('L')
         loadAction.triggered.connect(self.load)   
                        
         prevAction = QtGui.QAction('Prev', self)
         prevAction.setShortcut('Left')
-        prevAction.triggered.connect(self.drawing_frame.prevShape)   
-             
+        prevAction.triggered.connect(self.drawing_frame.prevShape)       
         nextAction = QtGui.QAction('Next', self)
         nextAction.setShortcut('Right')
         nextAction.triggered.connect(self.drawing_frame.nextShape)   
@@ -755,11 +780,22 @@ class MainWindow(QtGui.QMainWindow):
         self.addPointsAction.setShortcut('+')
         self.addPointsAction.setCheckable(True)
         self.addPointsAction.setChecked(True)
-        
+        self.addPointsAction.triggered.connect(self.drawing_frame.onGluePlus)         
+
         self.delPointsAction = QtGui.QAction('glue-', self)
         self.delPointsAction.setShortcut('-')
         self.delPointsAction.setCheckable(True)
-              
+        self.delPointsAction.triggered.connect(self.drawing_frame.onGlueMinus)         
+   
+        self.manualPointsAction = QtGui.QAction('Manual', self)
+        self.manualPointsAction.setShortcut('M')
+        self.manualPointsAction.setCheckable(True)
+        self.manualPointsAction.setChecked(True)
+        self.regularPointsAction = QtGui.QAction('Regular', self)
+        self.regularPointsAction.setShortcut('R')
+        self.regularPointsAction.setCheckable(True)
+        
+        self.delPointsAction.setCheckable(True)            
         shapes = QtGui.QActionGroup(self)
         shapes.addAction(polygonAction)
         shapes.addAction(circleAction)
@@ -769,6 +805,11 @@ class MainWindow(QtGui.QMainWindow):
         self.actionsGroup = QtGui.QActionGroup(self)
         self.actionsGroup.addAction(self.addPointsAction)
         self.actionsGroup.addAction(self.delPointsAction)   
+        
+        self.polyModeGroup = QtGui.QActionGroup(self)
+        self.polyModeGroup.addAction(self.manualPointsAction)
+        self.polyModeGroup.addAction(self.regularPointsAction)
+
 
         toolBar = QtGui.QToolBar(self)
         toolBar.addAction(exitAction)
@@ -784,16 +825,21 @@ class MainWindow(QtGui.QMainWindow):
         toolBar.addAction(polygonAction)
         toolBar.addAction(circleAction)
         toolBar.addAction(jointAction) 
-        self.addToolBar(toolBar)
+        toolBar.addSeparator()
         
+        self.addToolBar(toolBar)
         self.addToolBarBreak()
-        self.workBar = QtGui.QToolBar(self)
+        
         self.glueBar = QtGui.QToolBar(self)
         self.glueBar.addAction(self.addPointsAction)
         self.glueBar.addAction(self.delPointsAction)
         self.addToolBar(self.glueBar)
-        self.addToolBar(self.workBar)
-
+          
+        self.polyModeBar = QtGui.QToolBar(self)
+        self.polyModeBar.addAction(self.manualPointsAction)
+        self.polyModeBar.addAction(self.regularPointsAction)
+        self.addToolBar(self.polyModeBar)
+              
         layout = QtGui.QHBoxLayout()
         self.worldTable.setLayout(layout)
         self.worldTable.layout().addWidget(DataTable(self.data_manager.world))
