@@ -9,6 +9,7 @@ import json
 from pygments import highlight
 import cPickle
 from numpy import save
+from matplotlib.lines import VertexSelector
 
 def distance(p1, p2):
     return math.sqrt( (p2.x()-p1.x())**2 + (p2.y()-p1.y())**2)
@@ -90,7 +91,10 @@ class Polygon(Body):
         
     def add_vertex(self, point):
         self.main["fixture"][0]["polygon"]["vertices"].append([point.x(), point.y()])
-    
+        
+    def del_vertex(self, idx):
+        del self.main["fixture"][0]["polygon"]["vertices"][idx]
+        
     def setPosition(self, point):
         self.main["position"] = (point.x, point.y)
 
@@ -278,7 +282,12 @@ class DataManager(object):
         bodies += [ obj.serializeForJson()  for obj in self.elements["circles"]]
         world["body"] = bodies
         
+        
         joints = [ obj.serializeForJson()  for obj in self.elements["joints"]]
+        bodyIndices = { b["name"]:idx for idx,b in enumerate(bodies) }
+        for joint in joints:
+            joint["bodyA"] = bodyIndices[joint["bodyA"]]
+            joint["bodyB"] = bodyIndices[joint["bodyB"]]
         world["joint"] = joints
 
         json_file = open("body2d.json","w")
@@ -452,18 +461,13 @@ class DrawingFrame(QtGui.QFrame):
             self.updateTable()
             self.update()
     
-    def switchToGluePlus(self):
-        pass
-    def switchToGlueMinus(self):
-        pass  
-    
     def mousePressEvent(self, event):
         scaled_pos = self.scalePoint(event.pos())
         if event.button() == QtCore.Qt.LeftButton:
 
             if self.new_shape == True:
-
                 if self.shape_type == Types.POLYGON and self.parent.addPointsAction.isChecked():
+                    print "glue+"
 
                     p = Polygon()
                     p.add_vertex(scaled_pos)
@@ -515,6 +519,25 @@ class DrawingFrame(QtGui.QFrame):
                     self.update()
 
                 self.new_shape = False
+                
+            elif self.shape_type == Types.POLYGON and self.parent.delPointsAction.isChecked():
+                print "glue-"
+
+                curr_polygon = self.parent.data_manager.elements["polygons"][self.current_shape]
+                print curr_polygon.vertices()
+                for i, v in enumerate(curr_polygon.vertices()):
+                    print v
+                    if distance(toPoint(v), scaled_pos) < 0.4:
+                        curr_polygon.del_vertex(i)
+                
+                # test   
+                if len(curr_polygon.vertices())>=3 :
+                    b2polygon = b2.b2PolygonShape(vertices=curr_polygon.to_b2Vec2())   
+                      
+                    if b2polygon is not None and len(b2polygon.vertices)>2:
+                        curr_polygon.from_b2Vec2(b2polygon.vertices) 
+                        curr_polygon.setPosition(b2polygon.centroid)
+
 
     def mouseMoveEvent(self, event):
         self.currPoint = event.pos()
@@ -642,16 +665,13 @@ class DrawingFrame(QtGui.QFrame):
             painter.drawLine(
                     self.rescalePoint(jcenter), 
                     self.rescalePoint(jB))
-            # painter.drawEllipse(
-            #         self.rescalePoint(joint.center()), 
-            #         self.rescale(joint.radius()), 
-            #         self.rescale(joint.radius()))
+
  
         painter.setPen(QtGui.QPen(self.myPenColor, self.myPenWidth*0.1,
             QtCore.Qt.SolidLine, QtCore.Qt.RoundCap, QtCore.Qt.RoundJoin))
                    
         if self.prevPoint is not None and self.currPoint is not None:                
-            if self.shape_type == Types.POLYGON :
+            if self.shape_type == Types.POLYGON and self.parent.addPointsAction.isChecked():
     
                     painter.drawLine(
                             self.prevPoint, 
@@ -729,12 +749,10 @@ class MainWindow(QtGui.QMainWindow):
         self.addPointsAction.setShortcut('+')
         self.addPointsAction.setCheckable(True)
         self.addPointsAction.setChecked(True)
-        self.addPointsAction.triggered.connect(self.drawing_frame.switchToGluePlus)   
         
         self.delPointsAction = QtGui.QAction('glue-', self)
         self.delPointsAction.setShortcut('-')
         self.delPointsAction.setCheckable(True)
-        self.delPointsAction.triggered.connect(self.drawing_frame.switchToGlueMinus)          
               
         shapes = QtGui.QActionGroup(self)
         shapes.addAction(polygonAction)

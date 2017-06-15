@@ -36,15 +36,50 @@ class  Box2DSim(object):
 
     def step(self):
         self.world.Step(self.dt, self.vel_iters, self.pos_iters)
+        
+
+import matplotlib.pyplot as plt
+import numpy as np
+class TestPlotter:
+
+    def __init__(self, sim):
+
+        self.sim = sim
+        
+        self.fig = plt.figure()
+        self.ax = self.fig.add_subplot(111, aspect="equal")
+        self.plots = dict()
+        for key in self.sim.bodies.keys() :
+            self.plots[key], = self.ax.plot(0,0, color=[0,0,0])
+        
+        self.ax.set_xlim([0,30])
+        self.ax.set_ylim([0,30])
+
+
+    def step(self) :
+       
+        for key in self.plots.keys():
+            body = self.sim.bodies[key]
+            body_plot = self.plots[key]
+            vercs = np.vstack(body.fixtures[0].shape.vertices)
+            vercs = vercs[ np.hstack([np.arange(len(vercs)), 0]) ]
+            data = np.vstack([ body.GetWorldPoint(vercs[x]) 
+                for x in xrange(len(vercs))])
+            body_plot.set_data(*data.T)
+        
+        self.fig.canvas.draw()
 
 if __name__ == "__main__":
-    sim = Box2DSim("body2d.json")
     
-    data = []
-    for t in range(20):
+    sim = Box2DSim("body2d.json")
+    plotter = TestPlotter(sim)
+    
+    plt.ion()
+
+    for t in range(100):
+        
         sim.step()
-        dick = b2u.currentBodyShape(sim.bodies["dick_head"], sim.world)
-        ball1 = b2u.currentBodyShape(sim.bodies["ball1"], sim.world)
-        ball2 = b2u.currentBodyShape(sim.bodies["ball2"], sim.world)
-        data.append([dick, ball1, ball2])
-    print data
+        print t
+        plotter.step()
+        plt.pause(0.0001)
+   

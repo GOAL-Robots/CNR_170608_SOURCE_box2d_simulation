@@ -43,7 +43,6 @@ def createWorldFromJson(filePathName):
     with open(filePathName, "r") as json_file:
         jsw = json.load(json_file)
 
-    print jsw
     # create world from json data
     b2_world = create_world(jsw)
 
@@ -74,7 +73,7 @@ def add_joints(b2_world, jsw):
         # add joints to world
         for joint in jsw["joint"]:
             key, ref = add_joint(b2_world, jsw, joint)
-            joints[key] = ref
+            joint[key] = ref
 
     return joint_refs
 
