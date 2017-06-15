@@ -492,7 +492,7 @@ class DrawingFrame(QtGui.QFrame):
 
     
     def onGlueMinus(self):
-        self.glue_type = GlueType.DEL
+        self.glue_type = GlueType.DELETE
 
     
     def mousePressEvent(self, event):
@@ -554,8 +554,7 @@ class DrawingFrame(QtGui.QFrame):
 
                 self.new_shape = False
                 
-            elif self.shape_type == Types.POLYGON and self.glue_type==GlueType.ADD:
-                print "glue-"
+            elif self.shape_type == Types.POLYGON and self.glue_type==GlueType.DELETE:
 
                 curr_polygon = self.parent.data_manager.elements["polygons"][self.current_shape]
                 print curr_polygon.vertices()
