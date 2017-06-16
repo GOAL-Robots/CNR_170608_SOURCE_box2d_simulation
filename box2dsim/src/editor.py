@@ -230,9 +230,9 @@ class DataTable(QtGui.QTableWidget):
         self.rows = len(self.obj.main.keys())
         QtGui.QTableWidget.__init__(self, self.rows, 2)
         
-        self.setData()
-        self.resizeColumnsToContents()
-        self.resizeRowsToContents()
+        if self.setData() :
+            self.resizeColumnsToContents()
+            self.resizeRowsToContents()
         self.itemChanged.connect(self.onItemChanged) 
         self.horizontalHeader().hide()
         self.verticalHeader().hide()
@@ -240,8 +240,8 @@ class DataTable(QtGui.QTableWidget):
         
     def setData(self):
  
-        m = 0
-        for key,value in self.obj.main.iteritems():           
+        contains_data = False
+        for m, (key,value) in enumerate(self.obj.main.iteritems()):           
             name = QtGui.QTableWidgetItem(key)
             name.setFlags(QtCore.Qt.ItemIsEnabled)
             svalue = str(value)
@@ -253,7 +253,11 @@ class DataTable(QtGui.QTableWidget):
             cont = QtGui.QTableWidgetItem(svalue)
             self.setItem(m, 0, name)
             self.setItem(m, 1, cont)
-            m += 1   
+            if cont.data is None:
+                print name
+            contains_data = True
+        return contains_data
+
             
     def onItemChanged(self, item):
         name = self.item(item.row(), 0).text()
