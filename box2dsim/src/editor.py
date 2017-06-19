@@ -84,7 +84,7 @@ class MainWindow(QtGui.QMainWindow):
         nextAction.triggered.connect(self.nextObject)   
         toolBar.addAction(nextAction)
  
-        deleteAction = QtGui.QAction('delete', self)
+        deleteAction = QtGui.QAction('Delete', self)
         deleteAction.setShortcut('Delete')
         deleteAction.triggered.connect(self.deleteObject)    
         toolBar.addAction(deleteAction)
@@ -117,27 +117,91 @@ class MainWindow(QtGui.QMainWindow):
         objects.addAction(jointAction)
         
         self.addToolBarBreak()
-        manualBar = QtGui.QToolBar(self)
-        self.addToolBar(manualBar)
+        self.editBar = QtGui.QToolBar(self)
+        self.addToolBar(self.editBar)
         
 
+        polygonEdit = QtGui.QActionGroup(self)
+        polygonEdit.setExclusive(True)
+     
+        self.manualAction = QtGui.QAction('Manual', self)
+        self.manualAction.setShortcut('M')
+        self.manualAction.setCheckable(True)
+        self.manualAction.setChecked(True)
+        self.manualAction.triggered.connect(self.onManual)         
+        self.editBar.addAction(self.manualAction)  
+        polygonEdit.addAction(self.manualAction)   
+        self.editBar.addSeparator()
+        
+        self.regularAction = QtGui.QAction('Regular', self)
+        self.regularAction.setShortcut('M')
+        self.regularAction.setCheckable(True)
+        self.regularAction.triggered.connect(self.onRegular)         
+        self.editBar.addAction(self.regularAction)         
+        polygonEdit.addAction(self.regularAction)   
+        
+        self.addToolBarBreak()
+        self.manualBar = QtGui.QToolBar(self)
+        self.addToolBar(self.manualBar)
+             
         polygonManual = QtGui.QActionGroup(self)
         polygonManual.setExclusive(True)
-     
-        addPointAction = QtGui.QAction('+', self)
-        addPointAction.setShortcut('+')
-        addPointAction.setCheckable(True)
-        addPointAction.setChecked(True)
-        addPointAction.triggered.connect(self.onAddPoints)         
-        manualBar.addAction(addPointAction)
-        polygonManual.addAction(addPointAction)   
+        
+        self.addPointAction = QtGui.QAction('Add points', self)
+        self.addPointAction.setShortcut('+')
+        self.addPointAction.setCheckable(True)
+        self.addPointAction.setChecked(True)
+        self.addPointAction.triggered.connect(self.onAddPoints)         
+        self.manualBar.addAction(self.addPointAction)
+        polygonManual.addAction(self.addPointAction)   
 
-        delPointAction = QtGui.QAction('-', self)
-        delPointAction.setShortcut('-')
-        delPointAction.setCheckable(True)
-        delPointAction.triggered.connect(self.onDelPoints)         
-        manualBar.addAction(delPointAction)
-        polygonManual.addAction(delPointAction)  
+        self.delPointAction = QtGui.QAction('Delete points', self)
+        self.delPointAction.setShortcut('-')
+        self.delPointAction.setCheckable(True)
+        self.delPointAction.triggered.connect(self.onDelPoints)         
+        self.manualBar.addAction(self.delPointAction)
+        polygonManual.addAction(self.delPointAction)  
+        self.editBar.addSeparator()
+
+        self.addToolBarBreak()
+        self.regularBar = QtGui.QToolBar(self)
+        self.addToolBar(self.regularBar)
+        self.regularBar.setVisible(False)
+  
+        self.verticesBoxLabel = QtGui.QLabel("vertices")
+        self.verticesBoxLabel.setEnabled(False)  
+        self.regularBar.addWidget(self.verticesBoxLabel)
+                 
+        self.verticesBox = QtGui.QComboBox(self)
+        self.verticesBox.addItems(["%d" % x for x in range(3,17) ])
+        self.verticesBox.currentIndexChanged.connect(self.onVertNumberBoxChanged)
+        self.verticesBox.setEnabled(False) 
+        self.regularBar.addWidget(self.verticesBox)                  
+
+        self.angleBoxLabel = QtGui.QLabel("angle")
+        self.angleBoxLabel.setEnabled(False)    
+        self.regularBar.addWidget(self.angleBoxLabel)          
+        
+        self.angleBox = QtGui.QLineEdit(self)
+        validator = QtGui.QIntValidator()
+        self.angleBox.setValidator(validator)
+        self.angleBox.setMaxLength(4)   
+        self.angleBox.setEnabled(False)
+        self.angleBox.textChanged.connect(self.onAngleBoxChanged)
+        self.regularBar.addWidget(self.angleBox)          
+
+        self.radiusBoxLabel = QtGui.QLabel("radius")
+        self.radiusBoxLabel.setEnabled(False)   
+        self.regularBar.addWidget(self.radiusBoxLabel)          
+ 
+        self.radiusBox = QtGui.QLineEdit(self)
+        validator = QtGui.QIntValidator()
+        self.radiusBox.setValidator(validator)
+        self.radiusBox.setMaxLength(4)   
+        self.radiusBox.setEnabled(False)    
+        self.radiusBox.textChanged.connect(self.onRadiusBoxChanged)
+        self.regularBar.addWidget(self.radiusBox)   
+        
         
     def save(self):
         print "Save"
@@ -159,18 +223,69 @@ class MainWindow(QtGui.QMainWindow):
     
     def onPolygons(self):
         print "Poligoans"
-        
+        self.editBar.setVisible(True)
+        if self.manualAction.isChecked():
+            self.manualBar.setVisible(True)
+            self.regularBar.setVisible(False)
+        else:
+            self.manualBar.setVisible(False)
+            self.regularBar.setVisible(True)     
     def onCircles(self):
         print "Circles"
-        
+        self.editBar.setVisible(False)
+        self.manualBar.setVisible(False)
+        self.regularBar.setVisible(False)
+             
     def onJoints(self):
         print "Joints"
- 
+        self.editBar.setVisible(False)
+        self.manualBar.setVisible(False)
+        self.regularBar.setVisible(False)
+        
     def onAddPoints(self):
         print "Add Points"
         
     def onDelPoints(self):
         print "Del Points"   
+    
+    def onManual(self):
+        print "Manual" 
+        self.manualBar.setVisible(True)
+        self.regularBar.setVisible(False)
+
+        self.addPointAction.setEnabled(True) 
+        self.delPointAction.setEnabled(True) 
+        self.verticesBoxLabel.setEnabled(False)
+        self.verticesBox.setEnabled(False)
+        self.angleBoxLabel.setEnabled(False)
+        self.angleBox.setEnabled(False)
+        self.radiusBoxLabel.setEnabled(False)
+        self.radiusBox.setEnabled(False)
+            
+    def onRegular(self):
+        print "Regular"  
+        self.manualBar.setVisible(False)
+        self.regularBar.setVisible(True)
+       
+        self.addPointAction.setEnabled(False) 
+        self.delPointAction.setEnabled(False) 
+        self.verticesBoxLabel.setEnabled(True)
+        self.verticesBox.setEnabled(True)
+        self.angleBoxLabel.setEnabled(True)
+        self.angleBox.setEnabled(True)
+        self.radiusBoxLabel.setEnabled(True)
+        self.radiusBox.setEnabled(True)
+        
+        
+    def onVertNumberBoxChanged(self):
+        print "Change vertices"
+
+    def onAngleBoxChanged(self):
+        print "Change angle"
+        
+    def onRadiusBoxChanged(self):
+        print "Change radius"
+                             
 if __name__ == '__main__':
 
     import sys
