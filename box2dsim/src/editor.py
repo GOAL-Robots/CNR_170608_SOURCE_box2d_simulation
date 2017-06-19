@@ -158,7 +158,6 @@ class DataManager(object):
     def addJoint(self, joint):
         self.data["joint"].append(joint())
 
-    
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, app):
