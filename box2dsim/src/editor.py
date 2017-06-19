@@ -9,9 +9,33 @@ from Box2D.Box2D import b2_dynamicBody
 from prompt_toolkit.layout import toolbars
 
 
-class DataManager(object):
-    pass
+class World(DataObject):
+    
+    def __init__(self):
+        
+        super(World, self).__init__()
+        
+        self.data["gravity"] = (0,0) 
+        self.data["allowSleep"] = True 
+        self.data["autoClearForces"] = True 
+        self.data["positionIterations"] = 2 
+        self.data["velocityIterations"] = 6 
+        self.data["stepsPerSecond"] = 60 
+        self.data["warmStarting"] = True 
+        self.data["continuousPhysics"] = True 
+        self.data["subStepping"] = False 
 
+    def updateFromJson(self, jsw):
+        pass
+    
+    def convertToJson(self):
+        pass
+
+
+class DataManager(object):
+    
+    def __init__(self):
+        self.world = World()
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, app):
