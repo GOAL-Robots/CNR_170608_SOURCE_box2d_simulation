@@ -9,42 +9,156 @@ from Box2D.Box2D import b2_dynamicBody
 from prompt_toolkit.layout import toolbars
 
 
+def toPoint(dVec):
+    return QtCore.QPointF(dVec['x'], dVec['y'])  
+
+def fromPoint(qPoint):
+    return {'x': qPoint.x(), 'y': qPoint.y()}
+
+def toPointVect(dArray):
+    return [ QtCore.QPointF(x, y)  
+            for x,y in zip(darray['x'], darray['y'])]
+            
+def fromPointVect(qPointArray):
+    return {'x':[p.x() for p in qPointArray],  
+            'y': p.y() for p in qPointArray]}
+
 class World(DataObject):
     
     def __init__(self):
         
-        super(World, self).__init__()
+        self.data = dict()
         
-        self.data["gravity"] = [0,0] 
-        self.data["allowSleep"] = True 
-        self.data["autoClearForces"] = True 
+        self.data["gravity"] = {"x":0, "y":0} 
         self.data["positionIterations"] = 2 
         self.data["velocityIterations"] = 6 
         self.data["stepsPerSecond"] = 60 
+        self.data["allowSleep"] = True 
+        self.data["autoClearForces"] = True 
         self.data["warmStarting"] = True 
         self.data["continuousPhysics"] = True 
         self.data["subStepping"] = False 
+        self.data["body"] = [] 
+        self.data["joint"] = [] 
 
-    def updateFromJson(self, jsw):
         
-        self.data["gravity"] = [jsw["gravity"]["x"], jsw["gravity"]["y"]]
-        self.data["allowSleep"] = True 
-        self.data["autoClearForces"] = True 
-        self.data["positionIterations"] = 2 
-        self.data["velocityIterations"] = 6 
-        self.data["stepsPerSecond"] = 60 
-        self.data["warmStarting"] = True 
-        self.data["continuousPhysics"] = True 
-        self.data["subStepping"] = False 
+        def __call__(self):
+            return self.data
+        
+class Body(object):
     
-    def convertToJson(self):
-        pass
+    def __init__(self):
+        
+        self.main = dict()
+        self.main["name"] = ""
+        self.main["allowSleep"] = True
+        self.main["angle"] = 0.0
+        self.main["angularDamping"] = 0.0
+        self.main["angularVelocity"] = 0.0
+        self.main["awake"] = True
+        self.main["bullet"] = False
+        self.main["fixedRotation"] = False
+        self.main["linearDamping"] = 0.0
+        self.main["linearVelocity"] = {"x":0, "y":0} 
+        self.main["position"] = {"x":0, "y":0} 
+        self.main["type"] = 2
+        self.main["awake"] = True
+        def __call__(self):
+            return self.data
+        
 
+class Fixture(object):
+    
+    def __init__(self):
+        
+        self.main = dict()
+        self.main["name"] = ""
+        self.main["allowSleep"] = True
+        self.main["angle"] = 0.0
+        self.main["angularDamping"] = 0.0
+        self.main["angularVelocity"] = 0.0
+        self.main["awake"] = True
+        self.main["bullet"] = False
+        self.main["fixedRotation"] = False
+        self.main["linearDamping"] = 0.0
+        self.main["linearVelocity"] = {"x":0, "y":0} 
+        self.main["position"] = {"x":0, "y":0} 
+        self.main["type"] = 2
+        self.main["awake"] = True
+        
+        def __call__(self):
+            return self.data
+        
+class Circle(Fixture):
+    
+    def __init__(self):
+        
+        self.main = dict()
+        self.main["center"] = {"x":0, "y":0} 
+        self.main["radius"] = 0
+        
+        def __call__(self):
+            return self.data
 
+class Polygon(object):
+    
+    def __init__(self):
+        
+        self.main = dict()
+        self.main["vertices"] = {"x":[], "y":[]} 
+        
+        def __call__(self):
+            return self.data    
+           
+class Joint(object):
+
+    def __init__(self):
+        
+        self.data = dict()
+        self.data["type"] = "revolute"
+        self.data["name"] = ""
+        self.data["anchorA"] = {"x":0, "y":0}
+        self.data["anchorB"] = {"x":0, "y":0}
+        self.data["bodyA"] = 0
+        self.data["bodyB"] = 0
+        self.data["collideConnected"] = True
+        self.data["enableLimit"] = True
+        self.data["enableMotor"] = True
+        self.data["jointSpeed"] = 0
+        self.data["lowerLimit"] = 0
+        self.data["maxMotorTorque"] = 0
+        self.data["motorSpeed"] = 0
+        self.data["refAngle"] = 0
+        self.data["upperLimit"] = 0     
+        
+    def __call__(self):
+        return self.data  
+    
 class DataManager(object):
     
     def __init__(self):
+        
         self.world = World()
+        self.polygons = []
+        self.circles = []
+        self.joints = []
+        
+    def addPolygon(self, body, fixture, poly):
+        
+        fixture()["polygon"] = poly()
+        body()["fixture"] = fixture()
+        self.data["body"].append(body())
+    
+    def addCircle(self, body, fixture, circle):
+        
+        fixture()["circle"] = circle()
+        body()["fixture"] = fixture()
+        self.data["body"].append(body())
+    
+    def addJoint(self, joint):
+        self.data["joint"].append(joint())
+
+    
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, app):

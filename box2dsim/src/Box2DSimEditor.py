@@ -201,8 +201,6 @@ class Joint(object):
         
         return main_serialized     
   
-def toPoint(lst):
-    return QtCore.QPointF(*lst)  
 
 class Types:
 
