@@ -157,9 +157,40 @@ class DataManager(object):
         
         self.data["joint"].append(joint())
     
-    def loadFromFile(self, jsonFilename):
+    def loadFromFile(self, filePathName):
         
-
+        # load json into memory
+        with open(filePathName, "r") as json_file:
+            jsw = json.load(json_file)
+        
+        # load world
+        for key in world.keys():
+            if key in jsw.keys():
+                world[key] = jsw[key]
+            
+        # load bodies    
+        for jw_body in jsw["body"]:
+            dm_body = Body()
+            for key in dm_body.keys():
+                if key in jw_body.keys():
+                    dm_body[key] = jw_body[key]
+            dm_body_fixture = Fixture()
+            jw_body_fixture = jw_body["fixture"][0]
+            for key in dm_body_fixture.keys():
+                if key in jw_body_fixture.keys():
+                    dm_body_fixture[key] = jw_body_fixture[key]
+            if "polygon" in jw_body_fixture.keys():
+                jw_body_poly = jw_body_fixture["polygon"]
+                dm_body_poly = Polygon()
+                for key in dm_body_poly.keys():
+                    if key in jw_body_poly.keys():
+                        dm_body_poly[key] = jw_body_poly[key]
+                dm_body_fixture["polygon"] = dm_body_poly
+            elif "circle" in jw_body_fixture.keys():
+                pass
+            
+            dm_body["fixture"] = [dm_body_fixture]
+            self.bodies.append(dm_body)
 
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, app):
