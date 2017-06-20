@@ -7,6 +7,8 @@ from PySide import QtCore, QtGui
 import Box2D as b2
 from Box2D.Box2D import b2_dynamicBody
 from prompt_toolkit.layout import toolbars
+from box2dsim.src.Box2DSimEditor import World, Body
+from IPython.extensions.tests.test_autoreload import Fixture
 
 
 def toPoint(dVec):
@@ -23,11 +25,17 @@ def fromPointVect(qPointArray):
     return {'x':[p.x() for p in qPointArray],  
             'y': p.y() for p in qPointArray]}
 
+
+class DataObject(object):
+    
+    def __init__(self):
+        self.data = dict()
+
 class World(DataObject):
     
     def __init__(self):
         
-        self.data = dict()
+        super(World, self).__init__()
         
         self.data["gravity"] = {"x":0, "y":0} 
         self.data["positionIterations"] = 2 
@@ -41,80 +49,73 @@ class World(DataObject):
         self.data["body"] = [] 
         self.data["joint"] = [] 
 
+
         
-        def __call__(self):
-            return self.data
-        
-class Body(object):
+class Body(DataObject):
     
     def __init__(self):
         
-        self.main = dict()
-        self.main["name"] = ""
-        self.main["allowSleep"] = True
-        self.main["angle"] = 0.0
-        self.main["angularDamping"] = 0.0
-        self.main["angularVelocity"] = 0.0
-        self.main["awake"] = True
-        self.main["bullet"] = False
-        self.main["fixedRotation"] = False
-        self.main["linearDamping"] = 0.0
-        self.main["linearVelocity"] = {"x":0, "y":0} 
-        self.main["position"] = {"x":0, "y":0} 
-        self.main["type"] = 2
-        self.main["awake"] = True
-        def __call__(self):
-            return self.data
+        super(Body, self).__init__()
+
+        self.data["name"] = ""
+        self.data["allowSleep"] = True
+        self.data["angle"] = 0.0
+        self.data["angularDamping"] = 0.0
+        self.data["angularVelocity"] = 0.0
+        self.data["awake"] = True
+        self.data["bullet"] = False
+        self.data["fixedRotation"] = False
+        self.data["linearDamping"] = 0.0
+        self.data["linearVelocity"] = {"x":0, "y":0} 
+        self.data["position"] = {"x":0, "y":0} 
+        self.data["type"] = 2
+        self.data["awake"] = True
+        
         
 
-class Fixture(object):
+class Fixture(DataObject):
     
     def __init__(self):
         
-        self.main = dict()
-        self.main["name"] = ""
-        self.main["allowSleep"] = True
-        self.main["angle"] = 0.0
-        self.main["angularDamping"] = 0.0
-        self.main["angularVelocity"] = 0.0
-        self.main["awake"] = True
-        self.main["bullet"] = False
-        self.main["fixedRotation"] = False
-        self.main["linearDamping"] = 0.0
-        self.main["linearVelocity"] = {"x":0, "y":0} 
-        self.main["position"] = {"x":0, "y":0} 
-        self.main["type"] = 2
-        self.main["awake"] = True
-        
-        def __call__(self):
-            return self.data
-        
-class Circle(Fixture):
-    
-    def __init__(self):
-        
-        self.main = dict()
-        self.main["center"] = {"x":0, "y":0} 
-        self.main["radius"] = 0
-        
-        def __call__(self):
-            return self.data
+        super(Fixture, self).__init__()
 
-class Polygon(object):
+        self.data["name"] = ""
+        self.data["allowSleep"] = True
+        self.data["angle"] = 0.0
+        self.data["angularDamping"] = 0.0
+        self.data["angularVelocity"] = 0.0
+        self.data["awake"] = True
+        self.data["bullet"] = False
+        self.data["fixedRotation"] = False
+        self.data["linearDamping"] = 0.0
+        self.data["linearVelocity"] = {"x":0, "y":0} 
+        self.data["position"] = {"x":0, "y":0} 
+        self.data["type"] = 2
+        self.data["awake"] = True
+        
+class Circle(DataObject):
     
     def __init__(self):
         
-        self.main = dict()
-        self.main["vertices"] = {"x":[], "y":[]} 
+        super(Circle, self).__init__()
         
-        def __call__(self):
-            return self.data    
-           
-class Joint(object):
+        self.data["center"] = {"x":0, "y":0} 
+        self.data["radius"] = 0
+
+class Polygon(DataObject):
+    
+    def __init__(self):
+        
+        super(Polygon, self).__init__()
+
+        self.data["vertices"] = {"x":[], "y":[]} 
+        
+class Joint(DataObject):
 
     def __init__(self):
         
-        self.data = dict()
+        super(Joint, self).__init__()
+        
         self.data["type"] = "revolute"
         self.data["name"] = ""
         self.data["anchorA"] = {"x":0, "y":0}
@@ -129,10 +130,7 @@ class Joint(object):
         self.data["maxMotorTorque"] = 0
         self.data["motorSpeed"] = 0
         self.data["refAngle"] = 0
-        self.data["upperLimit"] = 0     
-        
-    def __call__(self):
-        return self.data  
+        self.data["upperLimit"] = 0       
     
 class DataManager(object):
     
@@ -156,7 +154,11 @@ class DataManager(object):
         self.data["body"].append(body())
     
     def addJoint(self, joint):
+        
         self.data["joint"].append(joint())
+    
+    def loadFromFile(self, jsonFilename):
+        
 
 
 class MainWindow(QtGui.QMainWindow):
