@@ -1,35 +1,66 @@
 #!/usr/bin/env python
 import copy
 import math
-import cPickle
 import json
 from PySide import QtCore, QtGui
 import Box2D as b2
-from Box2D.Box2D import b2_dynamicBody
-from prompt_toolkit.layout import toolbars
-from box2dsim.src.Box2DSimEditor import World, Body
-from IPython.extensions.tests.test_autoreload import Fixture
 
 
-def toPoint(dVec):
+
+def intersect(a, b):
+    ''' create a set with all the elements intersecting two containers    
+    '''
+    
+    return set(a) & set(b)
+
+def toPoint(dVec): 
+    ''' from dictionary to QPointF
+    
+    :param dVec: dictionary with x an y 
+    :type dVec: dict()
+    
+    :return: Qt point
+    :rtype: QtCore.QPointF
+    '''
     return QtCore.QPointF(dVec['x'], dVec['y'])  
 
 def fromPoint(qPoint):
+    ''' from QPointF to dictionary
+    
+    :param qPoint: Qt point
+    :type qPoint: QtCore.QPointF  
+    
+    :return: dictionary with x an y 
+    :rtype: dict()
+    '''
     return {'x': qPoint.x(), 'y': qPoint.y()}
 
 def toPointVect(dArray):
+    ''' form dictionary to vector of QPoints
+    
+    :param dArray: 
+    :type dArray:
+    
+    :return: dictionary with x an y 
+    :rtype: dict()
+    '''
+
     return [ QtCore.QPointF(x, y)  
             for x,y in zip(darray['x'], darray['y'])]
             
 def fromPointVect(qPointArray):
-    return {'x':[p.x() for p in qPointArray],  
-            'y': p.y() for p in qPointArray]}
+    return {'x': [p.x() for p in qPointArray],  
+            'y': [p.y() for p in qPointArray]}
 
 
 class DataObject(object):
     
     def __init__(self):
         self.data = dict()
+        
+    def __call__(self):
+        return self.data
+      
 
 class World(DataObject):
     
@@ -46,9 +77,6 @@ class World(DataObject):
         self.data["warmStarting"] = True 
         self.data["continuousPhysics"] = True 
         self.data["subStepping"] = False 
-        self.data["body"] = [] 
-        self.data["joint"] = [] 
-
 
         
 class Body(DataObject):
@@ -145,18 +173,18 @@ class DataManager(object):
         
         fixture()["polygon"] = poly()
         body()["fixture"] = fixture()
-        self.data["body"].append(body())
+        self.polygons.append(body())
     
     def addCircle(self, body, fixture, circle):
         
         fixture()["circle"] = circle()
         body()["fixture"] = fixture()
-        self.data["body"].append(body())
-    
+        self.circles.append(body())
+
     def addJoint(self, joint):
         
-        self.data["joint"].append(joint())
-    
+        self.joints.append(joint())
+
     def loadFromFile(self, filePathName):
         
         # load json into memory
@@ -164,34 +192,51 @@ class DataManager(object):
             jsw = json.load(json_file)
         
         # load world
-        for key in world.keys():
-            if key in jsw.keys():
-                world[key] = jsw[key]
+        for key in intersect(self.world.data.keys(), jsw.keys()):
+                self.world.data[key] = jsw[key]
             
         # load bodies    
         for jw_body in jsw["body"]:
-            dm_body = Body()
-            for key in dm_body.keys():
-                if key in jw_body.keys():
+            dm_body = Body()()
+            for key in intersect(dm_body.keys(), jw_body.keys()):
                     dm_body[key] = jw_body[key]
-            dm_body_fixture = Fixture()
+            dm_body_fixture = Fixture()()
             jw_body_fixture = jw_body["fixture"][0]
-            for key in dm_body_fixture.keys():
-                if key in jw_body_fixture.keys():
+            for key in intersect(dm_body_fixture.keys(), jw_body_fixture.keys()):
                     dm_body_fixture[key] = jw_body_fixture[key]
+            
             if "polygon" in jw_body_fixture.keys():
                 jw_body_poly = jw_body_fixture["polygon"]
-                dm_body_poly = Polygon()
-                for key in dm_body_poly.keys():
-                    if key in jw_body_poly.keys():
+                dm_body_poly = Polygon()()
+                for key in intersect(dm_body_poly.keys(),  jw_body_poly.keys()):
                         dm_body_poly[key] = jw_body_poly[key]
                 dm_body_fixture["polygon"] = dm_body_poly
-            elif "circle" in jw_body_fixture.keys():
-                pass
-            
-            dm_body["fixture"] = [dm_body_fixture]
-            self.bodies.append(dm_body)
+                self.polygons.append(dm_body)
 
+            elif "circle" in jw_body_fixture.keys():
+                jw_body_circle = jw_body_fixture["circle"]
+                dm_body_circle = Polygon()()
+                for key in intersect(dm_body_circle.keys(),  jw_body_circle.keys()):
+                        dm_body_circle[key] = jw_body_circle[key]
+                dm_body_fixture["circle"] = dm_body_circle
+                self.circles.append(dm_body)
+            
+            if not "body" in self.world.data.keys() :
+                self.world.data["body"] = []
+            self.world.data["body"].append(dm_body)   
+            
+        
+        # load joints
+        for jw_joint in jsw["joint"]:
+            dm_joint = Joint()()
+            for key in intersect(dm_joint.keys(), jw_joint.keys()):
+                dm_joint[key] = jw_joint[key]
+            self.joints.append(dm_joint)
+            if not "joint" in self.world.data.keys() :
+                self.world.data["joint"] = []
+            self.world.data["joint"].append(dm_joint)   
+
+            
 class MainWindow(QtGui.QMainWindow):
     def __init__(self, app):
         
