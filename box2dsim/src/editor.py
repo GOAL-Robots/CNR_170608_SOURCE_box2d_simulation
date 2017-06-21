@@ -4,6 +4,7 @@ import math
 import json
 from PySide import QtCore, QtGui
 import Box2D as b2
+from gc import disable
 
 
 
@@ -186,19 +187,19 @@ class DataManager(object):
         fixture()["polygon"] = poly()
         body()["fixture"] = fixture()
         self.polygons.append(body())
-        self.current_polygon = len(self.polygons) - 1
+        self.current_polygon = self.polygons[-1]
     
     def addCircle(self, body, fixture, circle):
         
         fixture()["circle"] = circle()
         body()["fixture"] = fixture()
         self.circles.append(body())
-        self.current_circle = len(self.circles) - 1
+        self.current_circle = self.circles[-1]
 
     def addJoint(self, joint):
         
         self.joints.append(joint())
-        self.current_joint = len(self.joints) - 1
+        self.current_joint = self.joints[-1]
 
     def loadFromFile(self, filePathName):
         
@@ -208,7 +209,7 @@ class DataManager(object):
         
         # load world
         for key in intersect(self.world.data.keys(), jsw.keys()):
-                self.world.data[key] = jsw[key]
+                self.world()[key] = jsw[key]
             
         # load bodies    
         for jw_body in jsw["body"]:
@@ -236,11 +237,10 @@ class DataManager(object):
                 dm_body_fixture["circle"] = dm_body_circle
                 self.circles.append(dm_body)
             
-            if not "body" in self.world.data.keys() :
-                self.world.data["body"] = []
-            self.world.data["body"].append(dm_body)   
-            
-        
+            if not "body" in self.world().keys() :
+                self.world()["body"] = []
+            self.world()["body"].append(dm_body)   
+                 
         # load joints
         for jw_joint in jsw["joint"]:
             dm_joint = Joint()()
@@ -251,8 +251,51 @@ class DataManager(object):
                 self.world.data["joint"] = []
             self.world.data["joint"].append(dm_joint)   
 
+class Table(QtGui.QTableWidget):
+    
+    def __init__(self, rows=0, cols=0, parent=None):
+        super(Table, self).__init__(rows, cols, parent)
+        self.horizontalHeader().hide()
+        self.verticalHeader().hide()  
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)    
+        #self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)  
+        self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        
+    def addWItems(self, mainTable, data):
+        
+        for row, (key, value) in enumerate(data.iteritems()):
+            mainTable.insertRow(row)
+            mainTable.setItem(row, 0, QtGui.QTableWidgetItem(key))
+            if type(value) is not type(dict()):
+                mainTable.setItem(row, 1, QtGui.QTableWidgetItem(str(value)))
+            else:
+                table = Table(len(value.keys()), 2)
+                self.addWItems(table, value)                                
+                mainTable.setCellWidget(row, 1, table)
+                table.resizeColumnsToContents()
+                table.resizeRowsToContents()
+                table.resizeColumnsToContents()
+                mainTable.setRowHeight(row, table.rowHeight(0)*len(value.keys()))
+                
+            mainTable.resizeRowsToContents()
+            mainTable.resizeColumnsToContents()    
+                      
+    def updateTable(self, data, exclude=None):
+
+        for row in xrange(self.rowCount()):
+            self.removeRow(row)
+                
+        selected_data = data
+        if exclude is not None:
+            selected_data = { key:value 
+                             for  key, value in selected_data.iteritems() if key != exclude}
+            
+        self.addWItems(self, selected_data)
+        self.update()
+
             
 class MainWindow(QtGui.QMainWindow):
+    
     def __init__(self, app):
         
         super(MainWindow, self).__init__()
@@ -262,12 +305,19 @@ class MainWindow(QtGui.QMainWindow):
 
         # windows 
            
-        self.worldTable = QtGui.QTableWidget(self)
         self.drawingFrame = QtGui.QFrame(self)
         self.objectTables = QtGui.QWidget(self)
-        self.objectMainTable = QtGui.QTableWidget(self)
-        self.objectFixtureTable = QtGui.QTableWidget(self)
-
+        
+        self.worldTable = Table(0, 2, self)
+        self.worldTable.horizontalHeader().hide()
+        self.worldTable.verticalHeader().hide()
+        self.objectMainTable = Table(0, 2, self)
+        self.objectMainTable.horizontalHeader().hide()
+        self.objectMainTable.verticalHeader().hide()
+        self.objectFixtureTable = Table(0, 2, self)
+        self.objectFixtureTable.horizontalHeader().hide()
+        self.objectFixtureTable.verticalHeader().hide()
+        
         self.setCentralWidget(main)
         mainLayout = QtGui.QHBoxLayout()
         main.setLayout(mainLayout)
@@ -282,7 +332,10 @@ class MainWindow(QtGui.QMainWindow):
         self.objectTables.setLayout(tablesLayout)
         self.objectTables.layout().addWidget(self.objectMainTable)
         self.objectTables.layout().addWidget(self.objectFixtureTable)
-
+        self.objectTables.setSizePolicy(
+            QtGui.QSizePolicy.Expanding,
+            QtGui.QSizePolicy.Expanding )
+        
         # toolbar
         toolBar = QtGui.QToolBar(self)
         self.addToolBar(toolBar)
@@ -330,30 +383,30 @@ class MainWindow(QtGui.QMainWindow):
         
         toolBar.addSeparator()
       
-        objects = QtGui.QActionGroup(self)
-        objects.setExclusive(True)
+        self.objects = QtGui.QActionGroup(self)
+        self.objects.setExclusive(True)
         
-        polygonAction = QtGui.QAction('Polygon', self)
-        polygonAction.setShortcut('P')
-        polygonAction.setCheckable(True)
-        polygonAction.setChecked(True)
-        polygonAction.triggered.connect(self.onPolygons)         
-        toolBar.addAction(polygonAction)
-        objects.addAction(polygonAction)
+        self.polygonAction = QtGui.QAction('Polygon', self)
+        self.polygonAction.setShortcut('P')
+        self.polygonAction.setCheckable(True)
+        self.polygonAction.setChecked(True)
+        self.polygonAction.triggered.connect(self.onPolygons)         
+        toolBar.addAction(self.polygonAction)
+        self.objects.addAction(self.polygonAction)
    
-        circleAction = QtGui.QAction('Circle', self)
-        circleAction.setShortcut('C')
-        circleAction.setCheckable(True)
-        circleAction.triggered.connect(self.onCircles)         
-        toolBar.addAction(circleAction)
-        objects.addAction(circleAction)
+        self.circleAction = QtGui.QAction('Circle', self)
+        self.circleAction.setShortcut('C')
+        self.circleAction.setCheckable(True)
+        self.circleAction.triggered.connect(self.onCircles)         
+        toolBar.addAction(self.circleAction)
+        self.objects.addAction(self.circleAction)
         
-        jointAction = QtGui.QAction('Joint', self)
-        jointAction.setShortcut('J')
-        jointAction.setCheckable(True)
-        jointAction.triggered.connect(self.onJoints)        
-        toolBar.addAction(jointAction)
-        objects.addAction(jointAction)
+        self.jointAction = QtGui.QAction('Joint', self)
+        self.jointAction.setShortcut('J')
+        self.jointAction.setCheckable(True)
+        self.jointAction.triggered.connect(self.onJoints)        
+        toolBar.addAction(self.jointAction)
+        self.objects.addAction(self.jointAction)
         
         self.addToolBarBreak()
         self.editBar = QtGui.QToolBar(self)
@@ -440,9 +493,20 @@ class MainWindow(QtGui.QMainWindow):
         self.radiusBox.setEnabled(False)    
         self.radiusBox.textChanged.connect(self.onRadiusBoxChanged)
         self.regularBar.addWidget(self.radiusBox)   
+        
+        
+        self.updateTables()
+
       
     def updateTables(self):
-          
+        
+        self.worldTable.clear()
+        self.worldTable.updateTable(self.data_manager.world())
+        
+        if self.objects.checkedAction() is self.polygonAction:
+            if self.data_manager.current_polygon is not None:
+                self.objectMainTable.updateTable(
+                    self.data_manager.current_polygon, exclude="fixture")
         
     def save(self):
         print "Save"
@@ -451,7 +515,9 @@ class MainWindow(QtGui.QMainWindow):
         print "Load"
         
     def newObject(self):
-        print "New"
+        if self.objects.checkedAction() is self.polygonAction:
+            self.data_manager.addPolygon(Body(), Fixture(), Polygon())
+            self.updateTables()
     
     def prevObject(self):
         print "Previous"
