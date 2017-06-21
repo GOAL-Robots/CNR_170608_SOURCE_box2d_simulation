@@ -14,7 +14,7 @@ def intersect(a, b):
     return set(a) & set(b)
 
 def toPoint(dVec): 
-    ''' from dictionary to QPointF
+    ''' Convert from dictionary to QPointF
     
     :param dVec: dictionary with x an y 
     :type dVec: dict()
@@ -24,33 +24,41 @@ def toPoint(dVec):
     '''
     return QtCore.QPointF(dVec['x'], dVec['y'])  
 
-def fromPoint(qPoint):
-    ''' from QPointF to dictionary
+def fromPoint(qVec):
+    ''' Convert from QPointF to dictionary
     
-    :param qPoint: Qt point
-    :type qPoint: QtCore.QPointF  
+    :param qVec: Qt point
+    :type qVec: QtCore.QPointF  
     
     :return: dictionary with x an y 
     :rtype: dict()
     '''
-    return {'x': qPoint.x(), 'y': qPoint.y()}
+    return {'x': qVec.x(), 'y': qVec.y()}
 
 def toPointVect(dArray):
-    ''' form dictionary to vector of QPoints
+    ''' Convert form dictionary to vector of QPoints
     
-    :param dArray: 
-    :type dArray:
+    :param dictionary with x an y keys
+    :type dArray: dict()
     
-    :return: dictionary with x an y 
-    :rtype: dict()
+    :return: a list of QpointF
+    :rtype: list(QtCore.QPointf)
     '''
 
     return [ QtCore.QPointF(x, y)  
-            for x,y in zip(darray['x'], darray['y'])]
+            for x,y in zip(dArray['x'], dArray['y'])]
             
-def fromPointVect(qPointArray):
-    return {'x': [p.x() for p in qPointArray],  
-            'y': [p.y() for p in qPointArray]}
+def fromPointVect(qArray):
+    ''' Convert form a list of QPoint to dictionary
+    
+    :param qArray: a list of QpointF
+    :type qArray: list(QtCore.QPointf)
+    
+    :return: dictionary with x an y keys
+    :rtype:  dArray: dict()
+    '''
+    return {'x': [p.x() for p in qArray],  
+            'y': [p.y() for p in qArray]}
 
 
 class DataObject(object):
@@ -169,21 +177,28 @@ class DataManager(object):
         self.circles = []
         self.joints = []
         
+        self.current_polygon = None
+        self.current_circle = None        
+        self.current_joint = None
+
     def addPolygon(self, body, fixture, poly):
         
         fixture()["polygon"] = poly()
         body()["fixture"] = fixture()
         self.polygons.append(body())
+        self.current_polygon = len(self.polygons) - 1
     
     def addCircle(self, body, fixture, circle):
         
         fixture()["circle"] = circle()
         body()["fixture"] = fixture()
         self.circles.append(body())
+        self.current_circle = len(self.circles) - 1
 
     def addJoint(self, joint):
         
         self.joints.append(joint())
+        self.current_joint = len(self.joints) - 1
 
     def loadFromFile(self, filePathName):
         
@@ -425,7 +440,9 @@ class MainWindow(QtGui.QMainWindow):
         self.radiusBox.setEnabled(False)    
         self.radiusBox.textChanged.connect(self.onRadiusBoxChanged)
         self.regularBar.addWidget(self.radiusBox)   
-        
+      
+    def updateTables(self):
+          
         
     def save(self):
         print "Save"
