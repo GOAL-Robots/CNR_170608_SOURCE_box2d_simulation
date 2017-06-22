@@ -511,6 +511,9 @@ class MainWindow(QtGui.QMainWindow):
                 self.objectMainTable.setRowCount(0)
                 self.objectMainTable.updateTable(
                     self.data_manager.current_polygon, exclude="fixture")
+                self.objectFixtureTable.setRowCount(0)
+                self.objectFixtureTable.updateTable(
+                    self.data_manager.current_polygon["fixture"])                
         
     def save(self):
         print "Save"
