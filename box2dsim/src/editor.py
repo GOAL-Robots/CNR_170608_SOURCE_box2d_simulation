@@ -254,6 +254,7 @@ class DataManager(object):
 class Table(QtGui.QTableWidget):
     
     def __init__(self, rows=0, cols=0, parent=None):
+        
         super(Table, self).__init__(rows, cols, parent)
         self.horizontalHeader().hide()
         self.verticalHeader().hide()  
@@ -265,6 +266,7 @@ class Table(QtGui.QTableWidget):
         
         for row, (key, value) in enumerate(data.iteritems()):
             mainTable.insertRow(row)
+            mainTable.setRowCount(row+1)
             mainTable.setItem(row, 0, QtGui.QTableWidgetItem(key))
             if type(value) is not type(dict()):
                 mainTable.setItem(row, 1, QtGui.QTableWidgetItem(str(value)))
@@ -288,7 +290,8 @@ class Table(QtGui.QTableWidget):
         selected_data = data
         if exclude is not None:
             selected_data = { key:value 
-                             for  key, value in selected_data.iteritems() if key != exclude}
+                             for  key, value in selected_data.iteritems() 
+                             if key != exclude}
             
         self.addWItems(self, selected_data)
         self.update()
@@ -499,12 +502,13 @@ class MainWindow(QtGui.QMainWindow):
 
       
     def updateTables(self):
-        
-        self.worldTable.clear()
+
+        self.worldTable.setRowCount(0)            
         self.worldTable.updateTable(self.data_manager.world())
         
         if self.objects.checkedAction() is self.polygonAction:
             if self.data_manager.current_polygon is not None:
+                self.objectMainTable.setRowCount(0)
                 self.objectMainTable.updateTable(
                     self.data_manager.current_polygon, exclude="fixture")
         
@@ -515,6 +519,7 @@ class MainWindow(QtGui.QMainWindow):
         print "Load"
         
     def newObject(self):
+        
         if self.objects.checkedAction() is self.polygonAction:
             self.data_manager.addPolygon(Body(), Fixture(), Polygon())
             self.updateTables()
