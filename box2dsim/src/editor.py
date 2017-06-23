@@ -258,9 +258,9 @@ class Table(QtGui.QTableWidget):
         super(Table, self).__init__(rows, cols, parent)
         self.horizontalHeader().hide()
         self.verticalHeader().hide()  
-        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)    
+        #self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)    
         #self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)  
-        self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         
     def addWItems(self, mainTable, data):
         
@@ -280,7 +280,8 @@ class Table(QtGui.QTableWidget):
                 mainTable.setRowHeight(row, table.rowHeight(0)*len(value.keys()))
                 
             mainTable.resizeRowsToContents()
-            mainTable.resizeColumnsToContents()    
+            mainTable.resizeColumnsToContents() 
+            mainTable.clearSpans()   
                       
     def updateTable(self, data, exclude=None):
 
