@@ -5,6 +5,7 @@ import json
 from PySide import QtCore, QtGui
 import Box2D as b2
 from gc import disable
+from PySide.QtGui import QVBoxLayout
 
 
 
@@ -253,14 +254,13 @@ class DataManager(object):
 
 class Table(QtGui.QTableWidget):
     
-    def __init__(self, rows=0, cols=0, parent=None):
+    def __init__(self, rows=0, cols=0, deep=1, parent=None):
         
-        super(Table, self).__init__(rows, cols, parent)
+        super(Table, self).__init__(rows, cols, parent) 
+        self.deep = deep
         self.horizontalHeader().hide()
         self.verticalHeader().hide()  
-        #self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)    
-        #self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)  
-        self.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         
     def addWItems(self, mainTable, data):
         
@@ -271,23 +271,15 @@ class Table(QtGui.QTableWidget):
             if type(value) is not type(dict()):
                 mainTable.setItem(row, 1, QtGui.QTableWidgetItem(str(value)))
             else:
-                table = Table(len(value.keys()), 2)
+                table = Table(len(value.keys()), 2, mainTable.deep +1)
                 self.addWItems(table, value)                                
+                table.resizeColumnsToContents()
+                mainTable.setRowHeight(row, table.rowHeight(0)*1.2*len(value.keys()))
                 mainTable.setCellWidget(row, 1, table)
-                table.resizeColumnsToContents()
-                table.resizeRowsToContents()
-                table.resizeColumnsToContents()
-                mainTable.setRowHeight(row, table.rowHeight(0)*len(value.keys()))
-                
-            mainTable.resizeRowsToContents()
-            mainTable.resizeColumnsToContents() 
-            mainTable.clearSpans()   
-                      
+            mainTable.setFixedWidth(400.0 - self.deep*100)
+                 
     def updateTable(self, data, exclude=None):
-
-        for row in xrange(self.rowCount()):
-            self.removeRow(row)
-                
+          
         selected_data = data
         if exclude is not None:
             selected_data = { key:value 
@@ -296,8 +288,13 @@ class Table(QtGui.QTableWidget):
             
         self.addWItems(self, selected_data)
         self.update()
+        
+    def resizeEvent(self, event):
+        
+        self.resizeRowsToContents()
+        super(Table, self).resizeEvent(event)
 
-            
+
 class MainWindow(QtGui.QMainWindow):
     
     def __init__(self, app):
@@ -312,13 +309,13 @@ class MainWindow(QtGui.QMainWindow):
         self.drawingFrame = QtGui.QFrame(self)
         self.objectTables = QtGui.QWidget(self)
         
-        self.worldTable = Table(0, 2, self)
+        self.worldTable = Table(rows=0, cols=2, parent=self)
         self.worldTable.horizontalHeader().hide()
         self.worldTable.verticalHeader().hide()
-        self.objectMainTable = Table(0, 2, self)
+        self.objectMainTable = Table(rows=0, cols=2, parent=self)
         self.objectMainTable.horizontalHeader().hide()
         self.objectMainTable.verticalHeader().hide()
-        self.objectFixtureTable = Table(0, 2, self)
+        self.objectFixtureTable = Table(rows=0, cols=2, parent=self)
         self.objectFixtureTable.horizontalHeader().hide()
         self.objectFixtureTable.verticalHeader().hide()
         
@@ -327,8 +324,20 @@ class MainWindow(QtGui.QMainWindow):
         main.setLayout(mainLayout)
                 
         main.layout().addWidget(self.drawingFrame)
-        main.layout().addWidget(self.worldTable)
-        main.layout().addWidget(self.objectTables)
+        
+        vWidget = QtGui.QWidget(self)
+        vLayout = QVBoxLayout()
+        vLayout.addWidget(QtGui.QLabel("world"))
+        vLayout.addWidget(self.worldTable)
+        vWidget.setLayout(vLayout)
+        main.layout().addWidget(vWidget)
+        
+        vWidget = QtGui.QWidget(self)
+        vLayout = QVBoxLayout()
+        vLayout.addWidget(QtGui.QLabel("current object"))
+        vLayout.addWidget(self.objectTables)
+        vWidget.setLayout(vLayout)
+        main.layout().addWidget(vWidget)
         
         self.drawingFrame.setFixedSize(600, 600)
 
