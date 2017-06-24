@@ -8,6 +8,8 @@ from gc import disable
 from PySide.QtGui import QVBoxLayout
 
 
+#------------------------------------------------------------------------------ 
+# Utilities
 
 def intersect(a, b):
     ''' create a set with all the elements intersecting two containers    
@@ -63,7 +65,13 @@ def fromPointVect(qArray):
             'y': [p.y() for p in qArray]}
 
 
+#------------------------------------------------------------------------------ 
+# These classes define objects that manage a database of json box2d objects
+
 class DataObject(object):
+    ''' Defines a common dictionary and a functor operator
+        for inherited types
+    '''
     
     def __init__(self):
         self.data = dict()
@@ -73,6 +81,8 @@ class DataObject(object):
       
 
 class World(DataObject):
+    ''' Manage box2d world info
+    '''
     
     def __init__(self):
         
@@ -90,6 +100,8 @@ class World(DataObject):
 
         
 class Body(DataObject):
+    ''' Manage box2d body info
+    '''
     
     def __init__(self):
         
@@ -112,6 +124,8 @@ class Body(DataObject):
         
 
 class Fixture(DataObject):
+    ''' Manage box2d fixture info
+    '''
     
     def __init__(self):
         
@@ -132,6 +146,8 @@ class Fixture(DataObject):
         self.data["awake"] = True
         
 class Circle(DataObject):
+    ''' Manage box2d Circle shape info
+    '''
     
     def __init__(self):
         
@@ -141,7 +157,8 @@ class Circle(DataObject):
         self.data["radius"] = 0
 
 class Polygon(DataObject):
-    
+    ''' Manage box2d Polygon shape info
+    '''    
     def __init__(self):
         
         super(Polygon, self).__init__()
@@ -149,7 +166,8 @@ class Polygon(DataObject):
         self.data["vertices"] = {"x":[], "y":[]} 
         
 class Joint(DataObject):
-
+    ''' Manage box2d joint info
+    '''
     def __init__(self):
         
         super(Joint, self).__init__()
@@ -171,6 +189,9 @@ class Joint(DataObject):
         self.data["upperLimit"] = 0       
     
 class DataManager(object):
+    ''' Use the database objects (see above) to manage
+        all editor data
+    '''
     
     def __init__(self):
         
@@ -184,6 +205,17 @@ class DataManager(object):
         self.current_joint = None
 
     def addPolygon(self, body, fixture, poly):
+        ''' Add a polygon body to the data
+        
+        :param body: contains body info
+        :type body: Body
+        
+        :param fixture: contains info about the fixture
+        :type fixture: Fixture
+        
+        :param poly: contains info about the polygon shape
+        :type poly: Polygon
+        '''
         
         fixture()["polygon"] = poly()
         body()["fixture"] = fixture()
@@ -191,6 +223,17 @@ class DataManager(object):
         self.current_polygon = self.polygons[-1]
     
     def addCircle(self, body, fixture, circle):
+        ''' Add a circle body to the data
+        
+        :param body: contains body info
+        :type body: Body
+        
+        :param fixture: contains info about the fixture
+        :type fixture: Fixture
+        
+        :param poly: contains info about the circle shape
+        :type poly: Circle
+        '''
         
         fixture()["circle"] = circle()
         body()["fixture"] = fixture()
@@ -198,11 +241,22 @@ class DataManager(object):
         self.current_circle = self.circles[-1]
 
     def addJoint(self, joint):
+        ''' Add a joint to the data
+        
+        :param joint: contains joint info
+        :type joint: Body
+        
+        '''
         
         self.joints.append(joint())
         self.current_joint = self.joints[-1]
 
     def loadFromFile(self, filePathName):
+        ''' Load data from json file
+        
+        :param filePathName: the path of the json file
+        :type filePathName: string
+        '''
         
         # load json into memory
         with open(filePathName, "r") as json_file:
@@ -252,9 +306,33 @@ class DataManager(object):
                 self.world.data["joint"] = []
             self.world.data["joint"].append(dm_joint)   
 
+#------------------------------------------------------------------------------ 
+# Defining the GUI
+
 class Table(QtGui.QTableWidget):
+    ''' A Table object to visualize the body2d data in the data_manager. 
+        Customized from QTableWidget.
+        
+        include the recursive method addItems, if an item is a dictionary
+        recursively build a Table object
+    '''
     
     def __init__(self, rows=0, cols=0, deep=1, parent=None):
+        '''
+        
+        :param rows: the number of initial rowws
+        :type rows: int
+        
+        :param cols: the number of columns
+        :type cols: int
+        
+        :param deep: an index defining the initial depth of the created table object.
+                     1 indicates that it is a top-level table.
+        :type deep: int
+        
+        :param parent: the parent widget (form QWidget init)
+        :type parent: QWidget
+        '''
         
         super(Table, self).__init__(rows, cols, parent) 
         self.deep = deep
@@ -262,7 +340,21 @@ class Table(QtGui.QTableWidget):
         self.verticalHeader().hide()  
         self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         
-    def addWItems(self, mainTable, data):
+    def addWItems(self, mainTable, initial_width=400, deep_discount=100, data):
+        '''
+        
+        :param mainTable: the upper level table that contains this table as an item
+        :type mainTable: Table
+        
+        :param initial_width: the width of a top-level table row
+        :type initial_width: int
+        
+        :param deep_discount: at each depth level the table row width is lowered by this factor
+        :type deep_discount: int
+        
+        :param data: the data to insert in this table
+        :type data: dict
+        '''
         
         for row, (key, value) in enumerate(data.iteritems()):
             mainTable.insertRow(row)
@@ -276,7 +368,7 @@ class Table(QtGui.QTableWidget):
                 table.resizeColumnsToContents()
                 mainTable.setRowHeight(row, table.rowHeight(0)*1.2*len(value.keys()))
                 mainTable.setCellWidget(row, 1, table)
-            mainTable.setFixedWidth(400.0 - self.deep*100)
+            mainTable.setFixedWidth(initial_width - self.deep*deep_discount)
                  
     def updateTable(self, data, exclude=None):
           
