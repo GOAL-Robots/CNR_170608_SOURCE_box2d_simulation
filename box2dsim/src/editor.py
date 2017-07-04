@@ -444,6 +444,8 @@ class Table(QtGui.QTableWidget):
         self.resizeRowsToContents()
         super(Table, self).resizeEvent(event)
 
+#------------------------------------------------------------------------------ 
+
 class Screen(QtGui.QFrame):
     def __init__(self, data_manager, parent=None):
         '''
@@ -469,6 +471,8 @@ class Screen(QtGui.QFrame):
     def mouseMoveEvent(self, event):
         if self.parent().polygon_manual_addpoint == True:
             pass
+
+#------------------------------------------------------------------------------ 
             
 class MainWindow(QtGui.QMainWindow):
     ''' the GUI
@@ -815,6 +819,9 @@ class MainWindow(QtGui.QMainWindow):
         
     def onRadiusBoxChanged(self):
         print "Change radius"
+                             
+#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------ 
                              
 if __name__ == '__main__':
 
