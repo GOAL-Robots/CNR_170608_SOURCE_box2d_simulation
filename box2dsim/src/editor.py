@@ -5,7 +5,6 @@ import json
 from PySide import QtCore, QtGui
 import Box2D as b2
 from gc import disable
-from PySide.QtGui import QVBoxLayout
 
 
 #------------------------------------------------------------------------------ 
@@ -72,6 +71,10 @@ class DataObject(object):
     ''' Defines a common dictionary and a functor operator
         for inherited types
     '''
+    class Types(object):
+        POLYGON = 1
+        CIRCLE = 2
+        JOINT = 3
     
     def __init__(self):
         self.data = dict()
@@ -187,7 +190,7 @@ class Joint(DataObject):
         self.data["motorSpeed"] = 0
         self.data["refAngle"] = 0
         self.data["upperLimit"] = 0       
-    
+  
 class DataManager(object):
     ''' Use the database objects (see above) to manage
         all editor data
@@ -200,9 +203,17 @@ class DataManager(object):
         self.circles = []
         self.joints = []
         
+        self.curr_object_type = None
+        self.curr_idx = None
         self.current_polygon = None
         self.current_circle = None        
         self.current_joint = None
+
+    def getcurrPolyPoints(self):
+        if self.current_polygon is not None:
+            dPoints =  self.current_polygon[fixture][0]["polygon"]["vertices"]
+            return [ [x,y] for x,y in zip(dPoints['x', 'y']) ]
+        return None
 
     def addPolygon(self, body, fixture, poly):
         ''' Add a polygon body to the data
@@ -221,6 +232,7 @@ class DataManager(object):
         body()["fixture"] = fixture()
         self.polygons.append(body())
         self.current_polygon = self.polygons[-1]
+        self.curr_idx = len(self.polygons) - 1
     
     def addCircle(self, body, fixture, circle):
         ''' Add a circle body to the data
@@ -239,6 +251,7 @@ class DataManager(object):
         body()["fixture"] = fixture()
         self.circles.append(body())
         self.current_circle = self.circles[-1]
+        self.curr_idx = len(self.circles) - 1
 
     def addJoint(self, joint):
         ''' Add a joint to the data
@@ -250,6 +263,42 @@ class DataManager(object):
         
         self.joints.append(joint())
         self.current_joint = self.joints[-1]
+        self.curr_idx = len(self.joints) - 1
+    
+    def nextObject(self):
+        
+        if self.curr_object_type == DataObject.Types.POLYGON :
+            if self.polygons is not None:
+                self.curr_idx = (self.cur_idx + 1) % len(self.polygons)
+                self.current_polygon = self.polygons[self.curr_idx]
+                
+        elif self.curr_object_type == DataObject.Types.CIRCLE :
+            if self.circles is not None:
+                self.curr_idx = (self.cur_idx + 1) % len(self.circles)
+                self.current_circle = self.circles[self.curr_idx]
+ 
+        elif self.curr_object_type == DataObject.Types.JOINT :
+            if self.joints is not None:
+                self.curr_idx = (self.cur_idx + 1) % len(self.joints)
+                self.current_joint = self.joints[self.curr_idx]
+
+    def prevObject(self):
+        
+        if self.curr_object_type == DataObject.Types.POLYGON :
+            if self.polygons is not None:
+                self.curr_idx = (self.cur_idx - 1) % len(self.polygons)
+                self.current_polygon = self.polygons[self.curr_idx]
+                
+        elif self.curr_object_type == DataObject.Types.CIRCLE :
+            if self.circles is not None:
+                self.curr_idx = (self.cur_idx - 1) % len(self.circles)
+                self.current_circle = self.circles[self.curr_idx]
+ 
+        elif self.curr_object_type == DataObject.Types.JOINT :
+            if self.joints is not None:
+                self.curr_idx = (self.cur_idx - 1) % len(self.joints)
+                self.current_joint = self.joints[self.curr_idx]
+  
 
     def loadFromFile(self, filePathName):
         ''' Load data from json file
@@ -340,9 +389,8 @@ class Table(QtGui.QTableWidget):
         self.verticalHeader().hide()  
         self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         
-    def addWItems(self, mainTable, initial_width=400, deep_discount=100, data):
+    def addWItems(self, mainTable, data, initial_width=400, deep_discount=100):
         '''
-        
         :param mainTable: the upper level table that contains this table as an item
         :type mainTable: Table
         
@@ -371,6 +419,14 @@ class Table(QtGui.QTableWidget):
             mainTable.setFixedWidth(initial_width - self.deep*deep_discount)
                  
     def updateTable(self, data, exclude=None):
+        ''' update the contents of the table
+        
+        :param data: the data to insert in this table
+        :type data: dict
+        
+        :param exclude: the item to exclude from insertion
+        :type exclude: string
+        '''
           
         selected_data = data
         if exclude is not None:
@@ -382,25 +438,56 @@ class Table(QtGui.QTableWidget):
         self.update()
         
     def resizeEvent(self, event):
+        ''' resize policy
+        '''
         
         self.resizeRowsToContents()
         super(Table, self).resizeEvent(event)
 
-
-class MainWindow(QtGui.QMainWindow):
+class Screen(QtGui.QFrame):
+    def __init__(self, data_manager, parent=None):
+        '''
+        
+        :param data_manager:
+        :type data_manager:
+        
+        :param parent:
+        :type parent:
+        '''
+        super(Screen, self).__init__(parent)
+        self.data_manager = data_manager
+ 
     
+    def mousePressEvent(self, event):
+        if self.parent().polygon_manual_addpoint == True:
+            pass
+   
+    def mouseReleaseEvent(self, event):
+        if self.parent().polygon_manual_addpoint == True:
+            pass    
+             
+    def mouseMoveEvent(self, event):
+        if self.parent().polygon_manual_addpoint == True:
+            pass
+            
+class MainWindow(QtGui.QMainWindow):
+    ''' the GUI
+    '''
     def __init__(self, app):
         
         super(MainWindow, self).__init__()
         self.data_manager = DataManager()
               
         main = QtGui.QWidget(self)
+        
+        self.polygon_manual_addpoint = True
+        self.polygon_manual_delpoint = False
+        self.circle_add = False
 
         # windows 
            
-        self.drawingFrame = QtGui.QFrame(self)
+        self.drawingFrame = Screen(self.data_manager, self)
         self.objectTables = QtGui.QWidget(self)
-        
         self.worldTable = Table(rows=0, cols=2, parent=self)
         self.worldTable.horizontalHeader().hide()
         self.worldTable.verticalHeader().hide()
@@ -418,14 +505,14 @@ class MainWindow(QtGui.QMainWindow):
         main.layout().addWidget(self.drawingFrame)
         
         vWidget = QtGui.QWidget(self)
-        vLayout = QVBoxLayout()
+        vLayout = QtGui.QVBoxLayout()
         vLayout.addWidget(QtGui.QLabel("world"))
         vLayout.addWidget(self.worldTable)
         vWidget.setLayout(vLayout)
         main.layout().addWidget(vWidget)
         
         vWidget = QtGui.QWidget(self)
-        vLayout = QVBoxLayout()
+        vLayout = QtGui.QVBoxLayout()
         vLayout.addWidget(QtGui.QLabel("current object"))
         vLayout.addWidget(self.objectTables)
         vWidget.setLayout(vLayout)
@@ -599,6 +686,7 @@ class MainWindow(QtGui.QMainWindow):
         self.radiusBox.textChanged.connect(self.onRadiusBoxChanged)
         self.regularBar.addWidget(self.radiusBox)   
         
+        self.data_manager.curr_object_type = DataObject.Types.POLYGON
         
         self.updateTables()
 
@@ -608,7 +696,7 @@ class MainWindow(QtGui.QMainWindow):
         self.worldTable.setRowCount(0)            
         self.worldTable.updateTable(self.data_manager.world())
         
-        if self.objects.checkedAction() is self.polygonAction:
+        if self.data_manager.curr_object_type == DataObject.Types.POLYGON:
             if self.data_manager.current_polygon is not None:
                 self.objectMainTable.setRowCount(0)
                 self.objectMainTable.updateTable(
@@ -631,30 +719,47 @@ class MainWindow(QtGui.QMainWindow):
     
     def prevObject(self):
         print "Previous"
+        self.data_manager.prevObject()
     
     def nextObject(self):
         print "next";
+        self.data_manager.nextObject()
     
     def deleteObject(self):
         print "Delete"        
     
     def onPolygons(self):
         print "Poligoans"
-        self.editBar.setVisible(True)
+        self.data_manager.curr_object_type = DataObject.Types.POLYGON
+
+        self.editBar.setVisible(True)        
         if self.manualAction.isChecked():
             self.manualBar.setVisible(True)
             self.regularBar.setVisible(False)
         else:
             self.manualBar.setVisible(False)
-            self.regularBar.setVisible(True)     
+            self.regularBar.setVisible(True)
+        
+        self.polygon_manual_addpoint = True
+        self.polygon_manual_delpoint = False
+        self.circle_add = False
+                 
     def onCircles(self):
         print "Circles"
         self.editBar.setVisible(False)
+        self.data_manager.curr_object_type = DataObject.Types.CIRCLE
+
         self.manualBar.setVisible(False)
         self.regularBar.setVisible(False)
+        
+        self.polygon_manual_addpoint = False
+        self.polygon_manual_delpoint = False
+        self.circle_add = True
              
     def onJoints(self):
         print "Joints"
+        self.data_manager.curr_object_type = DataObject.Types.JOINT
+
         self.editBar.setVisible(False)
         self.manualBar.setVisible(False)
         self.regularBar.setVisible(False)
@@ -662,9 +767,15 @@ class MainWindow(QtGui.QMainWindow):
     def onAddPoints(self):
         print "Add Points"
         
+        self.polygon_manual_addpoint = True
+        self.polygon_manual_delpoint = False
+        
     def onDelPoints(self):
         print "Del Points"   
     
+        self.polygon_manual_addpoint = False
+        self.polygon_manual_delpoint = True
+        
     def onManual(self):
         print "Manual" 
         self.manualBar.setVisible(True)
@@ -672,6 +783,7 @@ class MainWindow(QtGui.QMainWindow):
 
         self.addPointAction.setEnabled(True) 
         self.delPointAction.setEnabled(True) 
+        
         self.verticesBoxLabel.setEnabled(False)
         self.verticesBox.setEnabled(False)
         self.angleBoxLabel.setEnabled(False)
@@ -686,6 +798,7 @@ class MainWindow(QtGui.QMainWindow):
        
         self.addPointAction.setEnabled(False) 
         self.delPointAction.setEnabled(False) 
+        
         self.verticesBoxLabel.setEnabled(True)
         self.verticesBox.setEnabled(True)
         self.angleBoxLabel.setEnabled(True)
