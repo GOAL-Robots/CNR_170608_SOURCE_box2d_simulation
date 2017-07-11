@@ -2,7 +2,7 @@ import JsonToPyBox2D as json2d
 
 class PID(object) :
 
-    def __init__(self, dt=0.1, Kp=20.0, Ki=0.0, Kd=.1 ):
+    def __init__(self, dt=0.01, Kp=20.0, Ki=1.0, Kd=1.0 ):
        
         self.dt = dt
         self.previous_error = 0.0
@@ -26,8 +26,8 @@ class PID(object) :
         
         if setpoint is not None:
             self.setpoint = setpoint
-
-        error = setpoint - measured_value
+            
+        error = self.setpoint - measured_value
         self.integral =  self.integral + error*self.dt
         self.derivative = (error - self.previous_error)/self.dt
         self.output = self.Kp*error + \

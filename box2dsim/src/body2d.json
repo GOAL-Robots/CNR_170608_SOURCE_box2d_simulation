@@ -1,13 +1,8 @@
 {
     "gravity": {
-        "y": 0, 
+        "y": -9, 
         "x": 0
     },
-
-    "allowSleep": true, 
-    "positionIterations": 2, 
-    "velocityIterations": 6, 
-    "stepsPerSecond": 10, 
     "autoClearForces": true, 
     "continuousPhysics": true, 
     "subStepping": false, 
@@ -15,46 +10,61 @@
     "body": [
         {
             "angle": 0.0, 
-            "name": "Arm1", 
-            "linearDamping": 0.0, 
-            "allowSleep": true, 
-            "angularVelocity": 0.0, 
-            "linearVelocity": {
-                "y": 0.0, 
-                "x": 0.0
-            }, 
-            "awake": true, 
-            "angularDamping": 0.0, 
-            "bullet": false, 
+            "name": "Base", 
             "position": {
-                "y": 6.0, 
+                "y": 4.5, 
                 "x": 4.0
             }, 
-            "type": 2, 
-            "fixedRotation": false,
+            "type": 0, 
             "fixture": [
                 {
-                    "filter-groupIndex": 1, 
                     "name": "", 
                     "density": 1, 
-                    "friction": 0.2, 
-                    "filter-maskBits": 1, 
-                    "filter-categoryBits": 1, 
-                    "restitution": 0.1, 
-                    "sensor": true, 
                     "polygon": {
                         "vertices": {
                             "y": [
-                                8.0, 
-                                8.0, 
-                                2.0, 
-                                2.0
+                                0.5, 
+                                0.5, 
+                                -0.5, 
+                                -0.5
                             ], 
                             "x": [
-                                3.5, 
-                                4.5, 
-                                4.5, 
-                                3.5
+                                -0.5, 
+                                0.5, 
+                                0.5, 
+                                -0.5
+                            ]
+                        }
+                    }
+                }
+            ]
+        }, 
+
+        {
+            "angle": 0.0, 
+            "name": "Arm1", 
+            "position": {
+                "y": 7.0, 
+                "x": 4.0
+            }, 
+            "type": 2, 
+            "fixture": [
+                {
+                    "name": "", 
+                    "density": 1, 
+                    "polygon": {
+                        "vertices": {
+                            "y": [
+                                3.0, 
+                                3.0, 
+                                -3.0, 
+                                -3.0
+                            ], 
+                            "x": [
+                                -0.5, 
+                                0.5, 
+                                0.5, 
+                                -0.5
                             ]
                         }
                     }
@@ -64,75 +74,169 @@
         {
             "angle": 0.0, 
             "name": "Arm2", 
-            "linearDamping": 0.0, 
-            "allowSleep": true, 
-            "angularVelocity": 0.0, 
-            "linearVelocity": {
-                "y": 0.0, 
-                "x": 0.0
-            }, 
-            "awake": true, 
-            "angularDamping": 0.0, 
-            "bullet": false, 
             "position": {
-                "y": 8.0, 
-                "x": 8.0
+                "y": 13.0, 
+                "x": 4.0
             }, 
             "type": 2, 
-            "fixedRotation": false,
             "fixture": [
                 {
-                    "filter-groupIndex": 1, 
-                    "name": "", 
+                    "name": "",
                     "density": 1, 
-                    "friction": 0.2, 
-                    "filter-maskBits": 1, 
-                    "filter-categoryBits": 1, 
-                    "restitution": 0.1, 
-                    "sensor": true, 
                     "polygon": {
                         "vertices": {
                             "y": [
-                                10.0,
-                                10.0,
-                                6.0,
-                                6.0
+                                3.0, 
+                                3.0, 
+                                -3.0, 
+                                -3.0
                             ], 
                             "x": [
-                                3.5, 
-                                4.5, 
-                                4.5, 
-                                3.5
+                                -0.5, 
+                                0.5, 
+                                0.5, 
+                                -0.5
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "angle": 0.0, 
+            "name": "Arm3", 
+            "position": {
+                "y": 16.0, 
+                "x": 4.0
+            }, 
+            "type": 2, 
+            "fixture": [
+                {
+                    "name": "",
+                    "density": 1, 
+                    "polygon": {
+                        "vertices": {
+                            "y": [
+                                3.0, 
+                                3.0, 
+                                -3.0, 
+                                -3.0
+                            ], 
+                            "x": [
+                                -0.5, 
+                                0.5, 
+                                0.5, 
+                                -0.5
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "angle": 0.0, 
+            "name": "Arm4", 
+            "position": {
+                "y": 19.0, 
+                "x": 4.0
+            }, 
+            "type": 2, 
+            "fixture": [
+                {
+                    "name": "",
+                    "density": 1, 
+                    "polygon": {
+                        "vertices": {
+                            "y": [
+                                3.0, 
+                                3.0, 
+                                -3.0, 
+                                -3.0
+                            ], 
+                            "x": [
+                                -0.5, 
+                                0.5, 
+                                0.5, 
+                                -0.5
                             ]
                         }
                     }
                 }
             ]
         }
-    ], 
+    ],
     "joint": [
         {
-            "name": "", 
+            "name": "Arm1_to_Arm2", 
+            "type": "revolute",             
+            "bodyA": 1, 
+            "bodyB": 2, 
+            "jointSpeed": 0, 
+            "refAngle": 0, 
+            "collideConnected": false, 
+            "maxMotorTorque": 10000, 
+            "enableLimit": true, 
+            "motorSpeed": 0, 
+            "anchorA": {
+                "y": 3.0, 
+                "x": 0.0
+            }, 
+            "anchorB": {
+                "y": -3.0, 
+                "x": 0.0
+            }, 
+            "upperLimit": 3.14, 
+            "lowerLimit": -3.14,             
+            "enableMotor": true 
+        },
+        {
+            "name": "Arm2_to_Arm3", 
+            "type": "revolute",             
+            "bodyA": 2, 
+            "bodyB": 3, 
+            "jointSpeed": 0, 
+            "refAngle": 0, 
+            "collideConnected": false, 
+            "maxMotorTorque": 10000, 
+            "enableLimit": true, 
+            "motorSpeed": 0, 
+            "anchorA": {
+                "y": 3.0, 
+                "x": 0.0
+            }, 
+            "anchorB": {
+                "y": -3.0, 
+                "x": 0.0
+            }, 
+            "upperLimit": 3.14, 
+            "lowerLimit": -3.14,             
+            "enableMotor": true 
+        },
+
+        {
+            "name": "Ground_to_Arm1", 
             "type": "revolute",             
             "bodyA": 0, 
             "bodyB": 1, 
             "jointSpeed": 0, 
             "refAngle": 0, 
-            "collideConnected": true, 
-            "maxMotorTorque": 0, 
+            "collideConnected": false, 
+            "maxMotorTorque": 10000, 
             "enableLimit": true, 
             "motorSpeed": 0, 
-            "localAnchorA": {
-                "y": 2.0, 
+            "anchorA": {
+                "y": 0.0, 
                 "x": 0.0
             }, 
-            "localAnchorB": {
-                "y": -2.0, 
+            "anchorB": {
+                "y": -2.5, 
                 "x": 0.0
             }, 
-            "upperLimit": 0, 
-            "lowerLimit": 0,             
-            "enableMotor": true
+
+            "upperLimit": 3.14, 
+            "lowerLimit": -3.14,             
+            "enableMotor": true 
         }
+
     ] 
 }

@@ -1,6 +1,8 @@
 import JsonToPyBox2D as json2d
-import utils as b2u
 from PID import PID
+
+#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------ 
 
 class  Box2DSim(object):
     """ 2D physics using box2d and a json conf file
@@ -23,9 +25,7 @@ class  Box2DSim(object):
 
         """
 
-        world, bodies, joints = \
-                json2d.createWorldFromJson(world_file)
-        print joints
+        world, bodies, joints = json2d.createWorldFromJson(world_file)
         self.dt = dt
         self.vel_iters = vel_iters
         self.pos_iters = pos_iters
@@ -35,9 +35,20 @@ class  Box2DSim(object):
         self.joint_pids = { ("%s" % k): PID(dt=self.dt) 
                 for k in self.joints.keys() }
 
+    def move(self, joint_name, angle):
+        pid = self.joint_pids[joint_name]
+        pid.setpoint = angle
+        
     def step(self):
+
+        for key in self.joints.keys():
+            self.joint_pids[key].step(self.joints[key].angle)
+            self.joints[key].motorSpeed = (self.joint_pids[key].output)
+
         self.world.Step(self.dt, self.vel_iters, self.pos_iters)
         
+#------------------------------------------------------------------------------ 
+#------------------------------------------------------------------------------ 
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -70,6 +81,9 @@ class TestPlotter:
             body_plot.set_data(*data.T)
                             
         self.fig.canvas.draw()
+        
+#------------------------------------------------------------------------------
+#------------------------------------------------------------------------------ 
 
 if __name__ == "__main__":
     
@@ -80,8 +94,13 @@ if __name__ == "__main__":
 
     for t in range(1000):
         
+#------------------------------------------------------------------------------ 
+
+        sim.move("Arm1_to_Arm2", -np.pi/2.)
+        
+#------------------------------------------------------------------------------ 
+
         sim.step()
-        print t
         plotter.step()
         plt.pause(0.01)
    
