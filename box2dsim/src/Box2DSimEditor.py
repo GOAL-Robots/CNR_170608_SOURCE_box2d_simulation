@@ -163,8 +163,8 @@ class Joint(object):
         self.main = dict()
         self.main["type"] = "revolute"
         self.main["name"] = ""
-        self.main["anchorA"] = (0, 0)
-        self.main["anchorB"] = (0, 0)
+        self.main["localAnchorA"] = (0, 0)
+        self.main["localAnchorB"] = (0, 0)
         self.main["bodyA"] = 0
         self.main["bodyB"] = 0
         self.main["collideConnected"] = True
@@ -177,11 +177,11 @@ class Joint(object):
         self.main["refAngle"] = 0
         self.main["upperLimit"] = 0
     
-    def addAnchorA(self, point):
-        self.main["anchorA"] = (point.x(), point.y())
+    def addlocalAnchorA(self, point):
+        self.main["localAnchorA"] = (point.x(), point.y())
     
-    def addAnchorB(self, point):
-        self.main["anchorB"] = (point.x(), point.y())
+    def addlocalAnchorB(self, point):
+        self.main["localAnchorB"] = (point.x(), point.y())
      
     def setBodyA(self, name):
         self.main["bodyA"] = name
@@ -192,15 +192,17 @@ class Joint(object):
     def serializeForJson(self):
         
         main_serialized = copy.deepcopy(self.main) 
-        if "anchorA" in main_serialized.keys():
-            main_serialized["anchorA"] = {"x":self.main["anchorA"].x(),  
-                                         "y":self.main["anchorA"].y()}
-        if "anchorB" in main_serialized.keys():
-            main_serialized["anchorB"] = {"x":self.main["anchorB"].x(),  
-                                     "y":self.main["anchorB"].y()}
+        if "localAnchorA" in main_serialized.keys():
+            main_serialized["localAnchorA"] = {"x":self.main["localAnchorA"].x(),  
+                                         "y":self.main["localAnchorA"].y()}
+        if "localAnchorB" in main_serialized.keys():
+            main_serialized["localAnchorB"] = {"x":self.main["localAnchorB"].x(),  
+                                     "y":self.main["localAnchorB"].y()}
         
         return main_serialized     
   
+def toPoint(lst):
+    return QtCore.QPointF(*lst)  
 
 class Types:
 
@@ -228,18 +230,18 @@ class DataTable(QtGui.QTableWidget):
         self.rows = len(self.obj.main.keys())
         QtGui.QTableWidget.__init__(self, self.rows, 2)
         
-        self.itemChanged.connect(self.onItemChanged)         
-        if self.setData() :
-            #self.resizeColumnsToContents()
-            self.resizeRowsToContents()
+        self.setData()
+        self.resizeColumnsToContents()
+        self.resizeRowsToContents()
+        self.itemChanged.connect(self.onItemChanged) 
         self.horizontalHeader().hide()
         self.verticalHeader().hide()
         self.setFixedSize(400, 600)
         
     def setData(self):
  
-        contains_data = False
-        for m, (key,value) in enumerate(self.obj.main.iteritems()):           
+        m = 0
+        for key,value in self.obj.main.iteritems():           
             name = QtGui.QTableWidgetItem(key)
             name.setFlags(QtCore.Qt.ItemIsEnabled)
             svalue = str(value)
@@ -251,13 +253,7 @@ class DataTable(QtGui.QTableWidget):
             cont = QtGui.QTableWidgetItem(svalue)
             self.setItem(m, 0, name)
             self.setItem(m, 1, cont)
-            
-            if cont.data is not None:
-                print key
-                contains_data = True
-    
-        return contains_data
-
+            m += 1   
             
     def onItemChanged(self, item):
         name = self.item(item.row(), 0).text()
@@ -375,9 +371,14 @@ class DrawingFrame(QtGui.QFrame):
         layout = QtGui.QHBoxLayout()
         self.tables.setLayout(layout)    
         if curr_obj is not None:
-            print self.current_shape, curr_obj
-            data = DataTable(curr_obj)
-            self.tables.layout().addWidget(data)
+            self.tables.layout().addWidget(DataTable(curr_obj))
+    
+        if self.worldTable.layout() is not None:
+            clearLayout(self.worldTable.layout())    
+        layout = QtGui.QHBoxLayout()
+        self.worldTable.setLayout(layout)    
+        self.worldTable.layout().addWidget(DataTable(self.parent.data_manager.world))
+        
         self.parent.resize_all()
         
     def setPen(self, painter, highlight=False):
@@ -428,58 +429,37 @@ class DrawingFrame(QtGui.QFrame):
         self.prevPoint = None
         self.currPoint = None
         self.nextPoint = None
-        self.current_shape = len(container)-1
+        self.current_shape = -1
         self.updateTable()
         self.update()
           
     def prevShape(self):
         
-        container = None
-        
-        if self.shape_type == Types.POLYGON:
-            if len(self.parent.data_manager.elements["polygons"])>0:
-                container = self.parent.data_manager.elements["polygons"]
-        elif self.shape_type == Types.CIRCLE:
-            if len(self.parent.data_manager.elements["circles"])>0:
-                container = self.parent.data_manager.elements["circles"]
-        elif self.shape_type == Types.JOINT:
-            if len(self.parent.data_manager.elements["joints"])>0:
-                container = self.parent.data_manager.elements["joints"]
-                
         self.prevPoint = None
         self.currPoint = None
         self.nextPoint = None
-        self.current_shape -= 1
-        self.current_shape %= len(container) 
-        
-
+        self.current_shape -= 1 
+        if self.current_shape < 0:
+            self.current_shape = 0
         self.updateTable()
         self.update()
      
     def nextShape(self):
         
-        container = None
-        
-        if self.shape_type == Types.POLYGON:
-            if len(self.parent.data_manager.elements["polygons"])>0:
-                container = self.parent.data_manager.elements["polygons"]
-        elif self.shape_type == Types.CIRCLE:
-            if len(self.parent.data_manager.elements["circles"])>0:
-                container = self.parent.data_manager.elements["circles"]
-        elif self.shape_type == Types.JOINT:
-            if len(self.parent.data_manager.elements["joints"])>0:
-                container = self.parent.data_manager.elements["joints"]
-        
         self.prevPoint = None
         self.currPoint = None
         self.nextPoint = None
 
-
+        len_shapes = 0 
+        if self.shape_type == Types.POLYGON:
+            len_shapes = len(self.parent.data_manager.elements["polygons"])
+        elif self.shape_type == Types.CIRCLE:
+            len_shapes = len(self.parent.data_manager.elements["circles"])
+        elif self.shape_type == Types.JOINT:
+            len_shapes = len(self.parent.data_manager.elements["joints"])
         self.current_shape += 1 
-        self.current_shape %= len(container)
-        
-        print self.current_shape
-        
+        if self.current_shape > len_shapes - 1:
+            self.current_shape = 0
         self.updateTable()
         self.update()
     
@@ -626,20 +606,20 @@ class DrawingFrame(QtGui.QFrame):
                         if b.main["name"] == bodyA:
                             exists_bodyA = True
                             
-                            j.main["anchorA"] = QtCore.QPointF(
+                            j.main["localAnchorA"] = QtCore.QPointF(
                                     scaled_pos.x() - b.main["position"][0],   
                                     scaled_pos.y() - b.main["position"][1])                        
                         elif b.main["name"] == bodyB:
                             exists_bodyB = True
-                            j.main["anchorB"] = QtCore.QPointF(
+                            j.main["localAnchorB"] = QtCore.QPointF(
                                     scaled_pos.x() - b.main["position"][0],   
                                     scaled_pos.y() - b.main["position"][1]) 
                                                  
                     if not exists_bodyA:
-                        del j.main["anchorA"]   
+                        del j.main["localAnchorA"]   
                         j.main["bodyA"] = None   
                     if not exists_bodyB:
-                        del j.main["anchorB"] 
+                        del j.main["localAnchorB"] 
                         j.main["bodyB"] = None   
                                        
                     self.parent.data_manager.elements["joints"].append(j)
@@ -711,9 +691,9 @@ class DrawingFrame(QtGui.QFrame):
                     self.new_shape = True
 
             self.prevPoint = event.pos()
-            self.updateTable()
             self.update()
-
+            self.updateTable()
+    
     def scalePoint(self, point):
 
         return QtCore.QPointF( 
@@ -795,8 +775,8 @@ class DrawingFrame(QtGui.QFrame):
                     bodyBpos = b.main["position"]
 
             jcenter = toPoint(
-                    [ bodyApos[0] + joint.main["anchorA"].x(),
-                    bodyApos[1] + joint.main["anchorA"].y() ] )
+                    [ bodyApos[0] + joint.main["localAnchorA"].x(),
+                    bodyApos[1] + joint.main["localAnchorA"].y() ] )
             
             jA = toPoint(bodyApos)
             jB = toPoint(bodyBpos)
