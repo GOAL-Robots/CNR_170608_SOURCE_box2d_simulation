@@ -72,12 +72,12 @@ class TestPlotter:
 
     def step(self) :
        
-        for key, body_plot in self.plots.iteritems():
+        for key, body_plot in self.plots.items():
             body = self.sim.bodies[key]
             vercs = np.vstack(body.fixtures[0].shape.vertices)
             vercs = vercs[ np.hstack([np.arange(len(vercs)), 0]) ]
             data = np.vstack([ body.GetWorldPoint(vercs[x]) 
-                for x in xrange(len(vercs))])
+                for x in range(len(vercs))])
             body_plot.set_data(*data.T)
                             
         self.fig.canvas.draw()
