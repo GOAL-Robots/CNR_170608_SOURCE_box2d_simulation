@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-import copy
-import math
 import json
 from PySide import QtCore, QtGui
 import Box2D as b2
-from gc import disable
-
+import math
 
 #------------------------------------------------------------------------------ 
 # Utilities
+
+def distance(p1, p2):
+    return math.sqrt( (p2.x()-p1.x())**2 + (p2.y()-p1.y())**2)
 
 def intersect(a, b):
     ''' create a set with all the elements intersecting two containers    
@@ -49,7 +49,7 @@ def toPointVect(dArray):
     '''
 
     return [ QtCore.QPointF(x, y)  
-            for x,y in zip(dArray['x'], dArray['y'])]
+            for x, y in zip(dArray['x'], dArray['y'])]
             
 def fromPointVect(qArray):
     ''' Convert form a list of QPoint to dictionary
@@ -60,8 +60,33 @@ def fromPointVect(qArray):
     :return: dictionary with x an y keys
     :rtype:  dArray: dict()
     '''
-    return {'x': [p.x() for p in qArray],  
+    return {'x': [p.x() for p in qArray],
             'y': [p.y() for p in qArray]}
+
+def to_b2Vec2(dict_vertices):
+    ''' cinvert form dict to b2Vec2
+    
+    :param dict_vertices: dictionary with an x and y array item
+    :type dict_vertices: dict()
+    
+    :return: a list of b2Vec2
+    :rtype: list(b2Vec2, ...)
+    '''
+    return [ b2.b2Vec2(x, y) for (x,y) in 
+            zip(dict_vertices['x'],dict_vertices['y']) ]
+
+def from_b2Vec2(b2_vertices):  # @DontTrace
+    ''' cinvert form  b2Vec2 to dict
+    
+    :param b2_vertices: list of b2Vec2
+    :type b2_vertices: list(b2Vec2, ...)
+    
+    :return: dictionary with an x and y array item
+    :rtype: dict 
+    '''
+  
+    return {'x':[x for x,_ in b2_vertices],
+            'y':[y for _,y in b2_vertices] }
 
 
 #------------------------------------------------------------------------------ 
@@ -177,8 +202,8 @@ class Joint(DataObject):
         
         self.data["type"] = "revolute"
         self.data["name"] = ""
-        self.data["anchorA"] = {"x":0, "y":0}
-        self.data["anchorB"] = {"x":0, "y":0}
+        self.data["localAnchorA"] = {"x":0, "y":0}
+        self.data["localAnchorB"] = {"x":0, "y":0}
         self.data["bodyA"] = 0
         self.data["bodyB"] = 0
         self.data["collideConnected"] = True
@@ -211,9 +236,18 @@ class DataManager(object):
 
     def getcurrPolyPoints(self):
         if self.current_polygon is not None:
-            dPoints =  self.current_polygon[fixture][0]["polygon"]["vertices"]
-            return [ [x,y] for x,y in zip(dPoints['x', 'y']) ]
+            dPoints = self.current_polygon['fixture'][0]['polygon']['vertices']
+            return dPoints
         return None
+
+    def getAllPolyPoints(self):
+        
+        v_dPoints = []
+        for poly in self.polygons:
+            dPoints = poly['fixture'][0]['polygon']['vertices']
+            v_dPoints.append( dPoints )
+            
+        return v_dPoints
 
     def addPolygon(self, body, fixture, poly):
         ''' Add a polygon body to the data
@@ -229,7 +263,7 @@ class DataManager(object):
         '''
         
         fixture()["polygon"] = poly()
-        body()["fixture"] = fixture()
+        body()["fixture"] = [fixture()]
         self.polygons.append(body())
         self.current_polygon = self.polygons[-1]
         self.curr_idx = len(self.polygons) - 1
@@ -269,17 +303,17 @@ class DataManager(object):
         
         if self.curr_object_type == DataObject.Types.POLYGON :
             if self.polygons is not None:
-                self.curr_idx = (self.cur_idx + 1) % len(self.polygons)
+                self.curr_idx = (self.curr_idx + 1) % len(self.polygons)
                 self.current_polygon = self.polygons[self.curr_idx]
                 
         elif self.curr_object_type == DataObject.Types.CIRCLE :
             if self.circles is not None:
-                self.curr_idx = (self.cur_idx + 1) % len(self.circles)
+                self.curr_idx = (self.curr_idx + 1) % len(self.circles)
                 self.current_circle = self.circles[self.curr_idx]
  
         elif self.curr_object_type == DataObject.Types.JOINT :
             if self.joints is not None:
-                self.curr_idx = (self.cur_idx + 1) % len(self.joints)
+                self.curr_idx = (self.curr_idx + 1) % len(self.joints)
                 self.current_joint = self.joints[self.curr_idx]
 
     def prevObject(self):
@@ -328,7 +362,7 @@ class DataManager(object):
             if "polygon" in jw_body_fixture.keys():
                 jw_body_poly = jw_body_fixture["polygon"]
                 dm_body_poly = Polygon()()
-                for key in intersect(dm_body_poly.keys(),  jw_body_poly.keys()):
+                for key in intersect(dm_body_poly.keys(), jw_body_poly.keys()):
                         dm_body_poly[key] = jw_body_poly[key]
                 dm_body_fixture["polygon"] = dm_body_poly
                 self.polygons.append(dm_body)
@@ -336,7 +370,7 @@ class DataManager(object):
             elif "circle" in jw_body_fixture.keys():
                 jw_body_circle = jw_body_fixture["circle"]
                 dm_body_circle = Polygon()()
-                for key in intersect(dm_body_circle.keys(),  jw_body_circle.keys()):
+                for key in intersect(dm_body_circle.keys(), jw_body_circle.keys()):
                         dm_body_circle[key] = jw_body_circle[key]
                 dm_body_fixture["circle"] = dm_body_circle
                 self.circles.append(dm_body)
@@ -366,7 +400,7 @@ class Table(QtGui.QTableWidget):
         recursively build a Table object
     '''
     
-    def __init__(self, rows=0, cols=0, deep=1, parent=None):
+    def __init__(self, rows=0, cols=0, deep=1, initial_width=600, parent=None):
         '''
         
         :param rows: the number of initial rowws
@@ -379,6 +413,9 @@ class Table(QtGui.QTableWidget):
                      1 indicates that it is a top-level table.
         :type deep: int
         
+        :param initial_width: the width of a top-level table row
+        :type initial_width: int
+        
         :param parent: the parent widget (form QWidget init)
         :type parent: QWidget
         '''
@@ -388,14 +425,12 @@ class Table(QtGui.QTableWidget):
         self.horizontalHeader().hide()
         self.verticalHeader().hide()  
         self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        self.initial_width = initial_width
         
-    def addWItems(self, mainTable, data, initial_width=400, deep_discount=100):
+    def addWItems(self, mainTable, data, deep_discount=100):
         '''
         :param mainTable: the upper level table that contains this table as an item
         :type mainTable: Table
-        
-        :param initial_width: the width of a top-level table row
-        :type initial_width: int
         
         :param deep_discount: at each depth level the table row width is lowered by this factor
         :type deep_discount: int
@@ -406,18 +441,19 @@ class Table(QtGui.QTableWidget):
         
         for row, (key, value) in enumerate(data.iteritems()):
             mainTable.insertRow(row)
-            mainTable.setRowCount(row+1)
+            mainTable.setRowCount(row + 1)
             mainTable.setItem(row, 0, QtGui.QTableWidgetItem(key))
             if type(value) is not type(dict()):
                 mainTable.setItem(row, 1, QtGui.QTableWidgetItem(str(value)))
             else:
-                table = Table(len(value.keys()), 2, mainTable.deep +1)
+                table = Table(len(value.keys()), 2, mainTable.deep + 1)
                 self.addWItems(table, value)                                
                 table.resizeColumnsToContents()
-                mainTable.setRowHeight(row, table.rowHeight(0)*1.2*len(value.keys()))
+                mainTable.setRowHeight(row, table.rowHeight(0) * 1.2 * len(value.keys()))
                 mainTable.setCellWidget(row, 1, table)
-            mainTable.setFixedWidth(initial_width - self.deep*deep_discount)
-                 
+            mainTable.setFixedWidth(self.initial_width - self.deep * deep_discount)
+            mainTable.resizeColumnsToContents()   
+              
     def updateTable(self, data, exclude=None):
         ''' update the contents of the table
         
@@ -457,21 +493,102 @@ class Screen(QtGui.QFrame):
         :type parent:
         '''
         super(Screen, self).__init__(parent)
+        
+        self.parent_obj = parent
         self.data_manager = data_manager
- 
-    
-    def mousePressEvent(self, event):
-        if self.parent().polygon_manual_addpoint == True:
-            pass
-   
-    def mouseReleaseEvent(self, event):
-        if self.parent().polygon_manual_addpoint == True:
-            pass    
-             
-    def mouseMoveEvent(self, event):
-        if self.parent().polygon_manual_addpoint == True:
-            pass
+        
+        self.WINDOW_BOTTOM = 0.0 
+        self.WINDOW_LEFT = 0.0
+        self.WINDOW_WIDTH = 20.0
+        self.WINDOW_HEIGHT = 20.0
 
+    def scalePoint(self, point):
+
+        w = float(self.size().width())
+        h = float(self.size().height())
+        return QtCore.QPointF(
+                (point.x() / w) * self.WINDOW_WIDTH,
+                self.WINDOW_HEIGHT - (point.y() / h) * self.WINDOW_HEIGHT)
+
+    def test_polygon(self):
+        # test 
+        curr_polygon = self.data_manager.current_polygon
+        curr_vertices = curr_polygon['fixture'][0]['polygon']['vertices']
+        print curr_vertices
+        if len(curr_vertices['x']) > 3:
+            b2polygon = b2.b2PolygonShape(vertices=to_b2Vec2(curr_vertices))   
+            if b2polygon is not None:
+                corrected = from_b2Vec2(b2polygon.vertices) 
+                curr_vertices['x'] = corrected['x']
+                curr_vertices['y'] = corrected['y']
+                curr_polygon['position']= {'x':b2polygon.centroid.x,  
+                                           'y':b2polygon.centroid.y}             
+
+    def rescalePoint(self, point):
+        
+        w = float(self.size().width())
+        h = float(self.size().height())
+        return QtCore.QPointF(
+                point.x() * w / self.WINDOW_WIDTH,
+                (self.WINDOW_HEIGHT - point.y()) * h / self.WINDOW_HEIGHT)
+        
+    def mousePressEvent(self, event):
+        scaledPos = self.scalePoint(event.pos())
+        if self.parent_obj.polygon_manual_addpoint == True:
+            if self.data_manager.current_polygon is None:
+                self.parent_obj.newObject()
+                dPoints = self.data_manager.getcurrPolyPoints()
+                dPoints['x'] = [scaledPos.x()]
+                dPoints['y'] = [scaledPos.y()]
+            else:
+                dPoints = self.data_manager.getcurrPolyPoints()
+                dPoints['x'].append(scaledPos.x())
+                dPoints['y'].append(scaledPos.y())
+            self.test_polygon()
+        self.update()
+                                                        
+    def mouseReleaseEvent(self, event):
+        scaledPos = self.scalePoint(event.pos())
+        if self.parent_obj.polygon_manual_addpoint == True:
+            dPoints = self.data_manager.getcurrPolyPoints()
+            curr_pos = event.pos()
+            if curr_pos.x() != dPoints['x'][-1] or \
+                curr_pos.y() != dPoints['y'][-1] :
+                dPoints['x'].append(scaledPos.x())
+                dPoints['y'].append(scaledPos.y())
+            self.test_polygon()
+        self.update()
+                                
+    def mouseMoveEvent(self, event):
+        scaledPos = self.scalePoint(event.pos())
+        if self.parent_obj.polygon_manual_addpoint == True:
+            dPoints = self.data_manager.getcurrPolyPoints()
+            curr_pos = event.pos()
+            last_pos = toPointVect(dPoints)[-1]
+            if distance(curr_pos, last_pos) < 0.1 :
+                dPoints['x'][-1] = scaledPos.x()
+                dPoints['y'][-1] = scaledPos.y()
+            self.test_polygon()
+        self.update()
+
+    def paintEvent(self, event):
+
+        painter = QtGui.QPainter(self)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)         
+        
+        for vertices in self.data_manager.getAllPolyPoints():
+            if len(vertices['x']) > 0:
+                X = vertices['x'] + [vertices['x'][0]]
+                Y = vertices['y'] + [vertices['y'][0]]
+                vs = [QtCore.QPointF(x,y) for x,y in zip(X, Y)]
+                
+                for idx in xrange(1,len(vs)):
+                    prev_point = vs[idx-1]
+                    next_point = vs[idx]
+                    painter.drawLine(
+                        self.rescalePoint(prev_point),
+                        self.rescalePoint(next_point))
+           
 #------------------------------------------------------------------------------ 
             
 class MainWindow(QtGui.QMainWindow):
@@ -530,7 +647,7 @@ class MainWindow(QtGui.QMainWindow):
         self.objectTables.layout().addWidget(self.objectFixtureTable)
         self.objectTables.setSizePolicy(
             QtGui.QSizePolicy.Expanding,
-            QtGui.QSizePolicy.Expanding )
+            QtGui.QSizePolicy.Expanding)
         
         # toolbar
         toolBar = QtGui.QToolBar(self)
@@ -661,7 +778,7 @@ class MainWindow(QtGui.QMainWindow):
         self.regularBar.addWidget(self.verticesBoxLabel)
                  
         self.verticesBox = QtGui.QComboBox(self)
-        self.verticesBox.addItems(["%d" % x for x in range(3,17) ])
+        self.verticesBox.addItems(["%d" % x for x in range(3, 17) ])
         self.verticesBox.currentIndexChanged.connect(self.onVertNumberBoxChanged)
         self.verticesBox.setEnabled(False) 
         self.regularBar.addWidget(self.verticesBox)                  
@@ -707,7 +824,7 @@ class MainWindow(QtGui.QMainWindow):
                     self.data_manager.current_polygon, exclude="fixture")
                 self.objectFixtureTable.setRowCount(0)
                 self.objectFixtureTable.updateTable(
-                    self.data_manager.current_polygon["fixture"])                
+                    self.data_manager.current_polygon["fixture"][0])                
         
     def save(self):
         print "Save"

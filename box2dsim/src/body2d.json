@@ -111,13 +111,13 @@
    "refAngle": 0, 
    "collideConnected": true, 
    "maxMotorTorque": 0, 
-   "anchorB": {
+   "localAnchorB": {
     "y": -0.6593735376993823, 
     "x": -5.586844571431477
    }, 
    "enableLimit": true, 
    "motorSpeed": 0, 
-   "anchorA": {
+   "localAnchorA": {
     "y": 5.61515401204427, 
     "x": 0.44114529291788784
    }, 

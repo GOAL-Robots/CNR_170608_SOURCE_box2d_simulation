@@ -73,7 +73,7 @@ class TestPlotter:
 
 if __name__ == "__main__":
     
-    sim = Box2DSim("copy.json")
+    sim = Box2DSim("body2d.json")
     plotter = TestPlotter(sim)
     
     plt.ion()
