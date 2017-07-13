@@ -1,9 +1,10 @@
 import JsonToPyBox2D as json2d
 from PID import PID
+import Box2D as b2
 
 #------------------------------------------------------------------------------ 
 #------------------------------------------------------------------------------ 
-
+ 
 class  Box2DSim(object):
     """ 2D physics using box2d and a json conf file
     """
