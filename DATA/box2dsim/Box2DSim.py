@@ -4,7 +4,7 @@ import Box2D as b2
 
 #------------------------------------------------------------------------------ 
 #------------------------------------------------------------------------------ 
-
+ 
 class  Box2DSim(object):
     """ 2D physics using box2d and a json conf file
     """
@@ -15,7 +15,7 @@ class  Box2DSim(object):
             :param world_file: the json file from which all objects are created
             :type world_file: string
 
-            :param dt: the amount of time to simulate, this should not vary.
+            :para:m dt: the amount of time to simulate, this should not vary.
             :type dt: float
 
             :param pos_iters: for the velocity constraint solver.
