@@ -194,16 +194,20 @@ class InlineTestPlotter:
         """
         
         self.sim_step(self.sim)
- 
-        for key, body_plot in self.plots.items():
-            body = self.sim.bodies[key]
-            vercs = np.vstack(body.fixtures[0].shape.vertices)
-            vercs = vercs[range(len(vercs))+[0]]
-            data = np.vstack([ body.GetWorldPoint(vercs[x]) 
-                for x in range(len(vercs))])
-            body_plot.set_data(*data.T)
+
+        t = time.time()
+        if t - self._last_screen_update > 1 / 25:
+            self._last_screen_update = t 
             
-        return tuple([self.fig] + self.plots.values())
+            for key, body_plot in self.plots.items():
+                body = self.sim.bodies[key]
+                vercs = np.vstack(body.fixtures[0].shape.vertices)
+                vercs = vercs[range(len(vercs))+[0]]
+                data = np.vstack([ body.GetWorldPoint(vercs[x]) 
+                    for x in range(len(vercs))])
+                body_plot.set_data(*data.T)
+            
+            return tuple([self.fig] + self.plots.values())
     
     def makeVideo(self, frames=2000, interval=20):
 
