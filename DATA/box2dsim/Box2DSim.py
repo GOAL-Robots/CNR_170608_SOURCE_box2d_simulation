@@ -228,7 +228,7 @@ class InlineTestPlotter:
 if __name__ == "__main__":
 
     plt.ion()
-    sim = Box2DSim("./models/two_arms.json", dt=1/120)
+    sim = Box2DSim("./models/two_arms.json", dt=1/120.0)
 
     sim.move("Arm1_to_Arm2_Left", -np.pi * 1 / 3.)
     sim.move("Ground_to_Arm1_Left", -np.pi * 1 / 3.)
@@ -246,10 +246,11 @@ if __name__ == "__main__":
         for l, r in possible_contacts:
             c = sim.contacts(l, r)
             if c != 0:
-                time.sleep(0.03)
+                time.sleep(0.05)
                 print(l, r, c)
             else:
                 print("None")
+        print("")
         if t % 50 == 49:
             sim.move("Arm1_to_Arm2_Left", np.random.uniform(-np.pi, np.pi))
             sim.move("Ground_to_Arm1_Left", np.random.uniform(-np.pi / 3, -2 * np.pi / 3))
