@@ -1,0 +1,305 @@
+{
+    "gravity": {
+        "y": 0,
+        "x": 0
+    },
+    "autoClearForces": true,
+    "continuousPhysics": true,
+    "subStepping": false,
+    "warmStarting": true,
+    "body": [
+      {
+          "angle": 0.0,
+          "name": "Base_Left",
+          "position": {
+              "y": 0.0,
+              "x": -7.0
+          },
+          "type": 0,
+          "fixture": [
+              {
+                  "name": "",
+                  "density": 1,
+                  "group_index": 0,
+                  "polygon": {
+                      "vertices": {
+                          "y": [
+                              0.5,
+                              0.5,
+                              -0.5,
+                              -0.5
+                          ],
+                          "x": [
+                              -0.5,
+                              0.5,
+                              0.5,
+                              -0.5
+                          ]
+                      }
+                  }
+              }
+          ]
+      },
+
+      {
+          "angle": 0.0,
+          "name": "Arm1_Left",
+          "position": {
+              "y": 3.0,
+              "x": -7.0
+          },
+          "type": 2,
+          "fixture": [
+              {
+                  "name": "",
+                  "density": 1,
+                  "group_index": 2,
+                  "polygon": {
+                      "vertices": {
+                          "y": [
+                              3.0,
+                              3.0,
+                              -3.0,
+                              -3.0
+                          ],
+                          "x": [
+                              -0.5,
+                              0.5,
+                              0.5,
+                              -0.5
+                          ]
+                      }
+                  }
+              }
+          ]
+      },
+      {
+          "angle": 0.0,
+          "name": "Arm2_Left",
+          "position": {
+              "y": 9.0,
+              "x": -7.0
+          },
+          "type": 2,
+          "fixture": [
+              {
+                  "name": "",
+                  "density": 1,
+                  "group_index": 2,
+                  "polygon": {
+                      "vertices": {
+                          "y": [
+                              3.0,
+                              3.0,
+                              -3.0,
+                              -3.0
+                          ],
+                          "x": [
+                              -0.5,
+                              0.5,
+                              0.5,
+                              -0.5
+                          ]
+                      }
+                  }
+              }
+          ]
+      },
+
+      {
+          "angle": 0.0,
+          "name": "Base_Right",
+          "position": {
+              "y": 0.0,
+              "x": 7.0
+          },
+          "type": 0,
+          "fixture": [
+              {
+                  "name": "",
+                  "density": 1,
+                  "group_index": 0,
+                  "polygon": {
+                      "vertices": {
+                          "y": [
+                              0.5,
+                              0.5,
+                              -0.5,
+                              -0.5
+                          ],
+                          "x": [
+                              -0.5,
+                              0.5,
+                              0.5,
+                              -0.5
+                          ]
+                      }
+                  }
+              }
+          ]
+      },
+
+      {
+          "angle": 0.0,
+          "name": "Arm1_Right",
+          "position": {
+              "y": 3.0,
+              "x": 7.0
+          },
+          "type": 2,
+          "fixture": [
+              {
+                  "name": "",
+                  "density": 1,
+                  "group_index": 2,
+                  "polygon": {
+                      "vertices": {
+                          "y": [
+                              3.0,
+                              3.0,
+                              -3.0,
+                              -3.0
+                          ],
+                          "x": [
+                              -0.5,
+                              0.5,
+                              0.5,
+                              -0.5
+                          ]
+                      }
+                  }
+              }
+          ]
+      },
+      {
+          "angle": 0.0,
+          "name": "Arm2_Right",
+          "position": {
+              "y": 9.0,
+              "x": 7.0
+          },
+          "type": 2,
+          "fixture": [
+              {
+                  "name": "",
+                  "density": 1,
+                  "group_index": 2,
+                  "polygon": {
+                      "vertices": {
+                          "y": [
+                              3.0,
+                              3.0,
+                              -3.0,
+                              -3.0
+                          ],
+                          "x": [
+                              -0.5,
+                              0.5,
+                              0.5,
+                              -0.5
+                          ]
+                      }
+                  }
+              }
+          ]
+      }
+    ],
+    "joint": [
+      {
+          "name": "Arm1_to_Arm2_Left",
+          "type": "revolute",
+          "bodyA": 1,
+          "bodyB": 2,
+          "jointSpeed": 0,
+          "refAngle": 0,
+          "collideConnected": false,
+          "maxMotorTorque": 10000,
+          "enableLimit": true,
+          "motorSpeed": 0,
+          "anchorA": {
+              "y": 3.0,
+              "x": 0.0
+          },
+          "anchorB": {
+              "y": -3.0,
+              "x": 0.0
+          },
+          "upperLimit": 3.14,
+          "lowerLimit": -3.14,
+          "enableMotor": true
+      },
+      {
+          "name": "Ground_to_Arm1_Left",
+          "type": "revolute",
+          "bodyA": 0,
+          "bodyB": 1,
+          "jointSpeed": 0,
+          "refAngle": 0,
+          "collideConnected": false,
+          "maxMotorTorque": 10000,
+          "enableLimit": true,
+          "motorSpeed": 0,
+          "anchorA": {
+              "y": 0.0,
+              "x": 0.0
+          },
+          "anchorB": {
+              "y": -2.5,
+              "x": 0.0
+          },
+
+          "upperLimit": 3.14,
+          "lowerLimit": -3.14,
+          "enableMotor": true
+      },
+      {
+          "name": "Arm1_to_Arm2_Right",
+          "type": "revolute",
+          "bodyA": 4,
+          "bodyB": 5,
+          "jointSpeed": 0,
+          "refAngle": 0,
+          "collideConnected": false,
+          "maxMotorTorque": 10000,
+          "enableLimit": true,
+          "motorSpeed": 0,
+          "anchorA": {
+              "y": 3.0,
+              "x": 0.0
+          },
+          "anchorB": {
+              "y": -3.0,
+              "x": 0.0
+          },
+          "upperLimit": 3.14,
+          "lowerLimit": -3.14,
+          "enableMotor": true
+      },
+      {
+          "name": "Ground_to_Arm1_Right",
+          "type": "revolute",
+          "bodyA": 3,
+          "bodyB": 4,
+          "jointSpeed": 0,
+          "refAngle": 0,
+          "collideConnected": false,
+          "maxMotorTorque": 10000,
+          "enableLimit": true,
+          "motorSpeed": 0,
+          "anchorA": {
+              "y": 0.0,
+              "x": 0.0
+          },
+          "anchorB": {
+              "y": -2.5,
+              "x": 0.0
+          },
+
+          "upperLimit": 3.14,
+          "lowerLimit": -3.14,
+          "enableMotor": true
+      }
+
+
+    ]
+}
