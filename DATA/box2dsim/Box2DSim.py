@@ -1,5 +1,6 @@
 import JsonToPyBox2D as json2d
 from PID import PID
+import time
 import sys
 
 #------------------------------------------------------------------------------ 
@@ -40,8 +41,9 @@ class  Box2DSim(object):
         
         contacts = 0
         for ce in self.bodies[bodyA].contacts:
-            if ce.contact.fixtureB.body  == self.bodies[bodyB]:
-                contacts += 1
+            if ce.contact.touching is True:
+                if ce.contact.fixtureB.body  == self.bodies[bodyB]:
+                    contacts += 1
                 
         return contacts
     
@@ -126,7 +128,8 @@ class TestPlotter:
 
         self.sim = sim
         self.sim_step = sim_step
-
+ 
+        self._last_screen_update = time.time() 
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111, aspect="equal")
         self.plots = dict()
@@ -145,13 +148,19 @@ class TestPlotter:
         
         self.sim_step(self.sim)
                
-        for key, body_plot in self.plots.items():
-            body = self.sim.bodies[key]
-            vercs = np.vstack(body.fixtures[0].shape.vertices)
-            vercs = vercs[range(len(vercs))+[0]]
-            data = np.vstack([ body.GetWorldPoint(vercs[x]) 
-                for x in range(len(vercs))])
-            body_plot.set_data(*data.T)
+        t = time.time()
+        if t - self._last_screen_update > 1 / 25.0:
+            self._last_screen_update = t 
+            
+            for key, body_plot in self.plots.items():
+                body = self.sim.bodies[key]
+                vercs = np.vstack(body.fixtures[0].shape.vertices)
+                vercs = vercs[range(len(vercs))+[0]]
+                data = np.vstack([ body.GetWorldPoint(vercs[x]) 
+                    for x in range(len(vercs))])
+                body_plot.set_data(*data.T)
+            
+            self.fig.canvas.draw()
 
 #------------------------------------------------------------------------------ 
 
@@ -175,6 +184,7 @@ class InlineTestPlotter:
         self.sim = sim
         self.sim_step = sim_step
  
+        self._last_screen_update = time.time() 
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111, aspect="equal")
         self.plots = dict()
@@ -195,19 +205,16 @@ class InlineTestPlotter:
         
         self.sim_step(self.sim)
 
-        t = time.time()
-        if t - self._last_screen_update > 1 / 25:
-            self._last_screen_update = t 
-            
-            for key, body_plot in self.plots.items():
-                body = self.sim.bodies[key]
-                vercs = np.vstack(body.fixtures[0].shape.vertices)
-                vercs = vercs[range(len(vercs))+[0]]
-                data = np.vstack([ body.GetWorldPoint(vercs[x]) 
-                    for x in range(len(vercs))])
-                body_plot.set_data(*data.T)
-            
-            return tuple([self.fig] + self.plots.values())
+        for key, body_plot in self.plots.items():
+            body = self.sim.bodies[key]
+            vercs = np.vstack(body.fixtures[0].shape.vertices)
+            vercs = vercs[range(len(vercs))+[0]]
+            data = np.vstack([ body.GetWorldPoint(vercs[x]) 
+                for x in range(len(vercs))])
+            body_plot.set_data(*data.T)
+        self.fig.canvas.draw()
+        
+        return tuple([self.fig] + self.plots.values())
     
     def makeVideo(self, frames=2000, interval=20):
 
@@ -255,7 +262,7 @@ if __name__ == "__main__":
 
     is_inline = False 
     plt.ion()
-    sim = Box2DSim("arm.json")
+    sim = Box2DSim("arm.json", dt= 1/120.)
         
     def step(sim):
         sim.move("Arm1_to_Arm2", -np.pi*1/3.)
@@ -277,5 +284,6 @@ if __name__ == "__main__":
         plotter = TestPlotter(sim, sim_step=step)
         for t in range(1000):
             plotter.step()
-            plt.pause(0.00001)
+            plt.show()
+            time.sleep(0.0005)
 
