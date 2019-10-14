@@ -10,7 +10,7 @@ class  Box2DSim(object):
     """ 2D physics using box2d and a json conf file
     """
 
-    def __init__(self, world_file, dt=1/120.0, vel_iters=6, pos_iters=2):
+    def __init__(self, world_file, dt=1/100.0, vel_iters=10, pos_iters=20):
         """ 
 
             :param world_file: the json file from which all objects are created
@@ -43,7 +43,7 @@ class  Box2DSim(object):
         for ce in self.bodies[bodyA].contacts:
             if ce.contact.touching is True:
                 if ce.contact.fixtureB.body  == self.bodies[bodyB]:
-                    contacts += 1
+                        contacts += 1
                 
         return contacts
     
@@ -92,10 +92,10 @@ class VisualSensor:
             yrng = ylim[1] - ylim[0] 
             resize = (xrng, yrng)
         retina = np.zeros(resize)
-        for key in list(self.sim.bodies.keys()):
+        for key in self.sim.bodies.keys():
             body = self.sim.bodies[key]
             vercs = np.vstack(body.fixtures[0].shape.vertices)
-            vercs = vercs[list(range(len(vercs)))+[0]]
+            vercs = vercs[range(len(vercs))+[0]]
             data = [body.GetWorldPoint(vercs[x]) 
                 for x in range(len(vercs))]
             retina += path2pixels(data, xlim, ylim,
@@ -107,8 +107,10 @@ class VisualSensor:
 #------------------------------------------------------------------------------ 
 #------------------------------------------------------------------------------ 
 
-import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.patches import Polygon
+from matplotlib.collections import PatchCollection
 
 class TestPlotter:
     """ Plotter of simulations
@@ -128,39 +130,32 @@ class TestPlotter:
 
         self.sim = sim
         self.sim_step = sim_step
- 
-        self._last_screen_update = time.time() 
+        self._last_screen_update = time.time()
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111, aspect="equal")
-        self.plots = dict()
-        self.jointPlots = dict()
-        for key in list(self.sim.bodies.keys()) :
-            self.plots[key], = self.ax.plot(0,0, color=[0,0,0])
-        for key in list(self.sim.joints.keys()) :
-            self.jointPlots[key], = self.ax.plot(0,0, lw=4, color=[1,0,0])       
-        self.ax.set_xlim([0,30])
-        self.ax.set_ylim([0,30])
-
+        self.polygons = {}
+        for key in self.sim.bodies.keys() :
+            self.polygons[key] = Polygon([[0, 0]], True)
+            self.ax.add_artist(self.polygons[key])
+        self.ax.set_xlim([0, 30])
+        self.ax.set_ylim([0, 30])
+        self.fig.show()
 
     def step(self) :
         """ Run a single simulator step
         """
         
         self.sim_step(self.sim)
-               
         t = time.time()
-        if t - self._last_screen_update > 1 / 25.0:
-            self._last_screen_update = t 
-            
-            for key, body_plot in list(self.plots.items()):
+        if t - self._last_screen_update > 1 / 15:
+            self._last_screen_update = t
+            for key in self.polygons:
                 body = self.sim.bodies[key]
                 vercs = np.vstack(body.fixtures[0].shape.vertices)
-                vercs = vercs[list(range(len(vercs)))+[0]]
                 data = np.vstack([ body.GetWorldPoint(vercs[x]) 
                     for x in range(len(vercs))])
-                body_plot.set_data(*data.T)
-            
-            self.fig.canvas.draw()
+                self.polygons[key].set_xy(data)
+            self.fig.canvas.flush_events()
 
 #------------------------------------------------------------------------------ 
 
@@ -184,14 +179,13 @@ class InlineTestPlotter:
         self.sim = sim
         self.sim_step = sim_step
  
-        self._last_screen_update = time.time() 
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111, aspect="equal")
         self.plots = dict()
         self.jointPlots = dict()
-        for key in list(self.sim.bodies.keys()) :
+        for key in self.sim.bodies.keys() :
             self.plots[key], = self.ax.plot(0,0, color=[0,0,0])
-        for key in list(self.sim.joints.keys()) :
+        for key in self.sim.joints.keys() :
             self.jointPlots[key], = self.ax.plot(0,0, lw=4, color=[1,0,0])       
         self.ax.set_xlim([0,30])
         self.ax.set_ylim([0,30])
@@ -204,17 +198,16 @@ class InlineTestPlotter:
         """
         
         self.sim_step(self.sim)
-
-        for key, body_plot in list(self.plots.items()):
+ 
+        for key, body_plot in self.plots.items():
             body = self.sim.bodies[key]
             vercs = np.vstack(body.fixtures[0].shape.vertices)
-            vercs = vercs[list(range(len(vercs)))+[0]]
+            vercs = vercs[range(len(vercs))+[0]]
             data = np.vstack([ body.GetWorldPoint(vercs[x]) 
                 for x in range(len(vercs))])
             body_plot.set_data(*data.T)
-        self.fig.canvas.draw()
-        
-        return tuple([self.fig] + list(self.plots.values()))
+            
+        return tuple([self.fig] + self.plots.values())
     
     def makeVideo(self, frames=2000, interval=20):
 
@@ -262,9 +255,9 @@ if __name__ == "__main__":
 
     is_inline = False 
     plt.ion()
-    sim = Box2DSim("arm.json", dt= 1/120.)
+    sim = Box2DSim("./models/arm.json")
         
-    def step(sim):
+    def step_function(sim):
         sim.move("Arm1_to_Arm2", -np.pi*1/3.)
         sim.move("Arm2_to_Arm3", -np.pi*1/3.)
         sim.move("Arm3_to_Claw10", -np.pi/4.)
@@ -272,19 +265,17 @@ if __name__ == "__main__":
         sim.step()  
 
     if is_inline == True:
-
-        inline_sim = Box2DSim("arm.json")
+        inline_sim = Box2DSim("./models/arm.json")
         inline_sim.step = step
                       
-        plotter = InlineTestPlotter(sim, sim_step=step)
+        plotter = InlineTestPlotter(sim, sim_step=step_function)
         plotter.makeVideo()
         plotter.save()
      
     elif is_inline == False:
              
-        plotter = TestPlotter(sim, sim_step=step)
+        plotter = TestPlotter(sim, sim_step=step_function)
         for t in range(1000):
             plotter.step()
-            plt.show()
-            time.sleep(0.0005)
+            plt.pause(0.00001)
 
