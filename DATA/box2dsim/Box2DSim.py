@@ -35,7 +35,7 @@ class  Box2DSim(object):
         self.bodies = bodies
         self.joints = joints
         self.joint_pids = { ("%s" % k): PID(dt=self.dt) 
-                for k in self.joints.keys() }
+                for k in list(self.joints.keys()) }
         
     def contacts(self, bodyA, bodyB):
         
@@ -53,7 +53,7 @@ class  Box2DSim(object):
         
     def step(self):
 
-        for key in self.joints.keys():
+        for key in list(self.joints.keys()):
             self.joint_pids[key].step(self.joints[key].angle)
             self.joints[key].motorSpeed = (self.joint_pids[key].output)
 
@@ -92,10 +92,10 @@ class VisualSensor:
             yrng = ylim[1] - ylim[0] 
             resize = (xrng, yrng)
         retina = np.zeros(resize)
-        for key in self.sim.bodies.keys():
+        for key in list(self.sim.bodies.keys()):
             body = self.sim.bodies[key]
             vercs = np.vstack(body.fixtures[0].shape.vertices)
-            vercs = vercs[range(len(vercs))+[0]]
+            vercs = vercs[list(range(len(vercs)))+[0]]
             data = [body.GetWorldPoint(vercs[x]) 
                 for x in range(len(vercs))]
             retina += path2pixels(data, xlim, ylim,
@@ -134,9 +134,9 @@ class TestPlotter:
         self.ax = self.fig.add_subplot(111, aspect="equal")
         self.plots = dict()
         self.jointPlots = dict()
-        for key in self.sim.bodies.keys() :
+        for key in list(self.sim.bodies.keys()) :
             self.plots[key], = self.ax.plot(0,0, color=[0,0,0])
-        for key in self.sim.joints.keys() :
+        for key in list(self.sim.joints.keys()) :
             self.jointPlots[key], = self.ax.plot(0,0, lw=4, color=[1,0,0])       
         self.ax.set_xlim([0,30])
         self.ax.set_ylim([0,30])
@@ -152,10 +152,10 @@ class TestPlotter:
         if t - self._last_screen_update > 1 / 25.0:
             self._last_screen_update = t 
             
-            for key, body_plot in self.plots.items():
+            for key, body_plot in list(self.plots.items()):
                 body = self.sim.bodies[key]
                 vercs = np.vstack(body.fixtures[0].shape.vertices)
-                vercs = vercs[range(len(vercs))+[0]]
+                vercs = vercs[list(range(len(vercs)))+[0]]
                 data = np.vstack([ body.GetWorldPoint(vercs[x]) 
                     for x in range(len(vercs))])
                 body_plot.set_data(*data.T)
@@ -189,9 +189,9 @@ class InlineTestPlotter:
         self.ax = self.fig.add_subplot(111, aspect="equal")
         self.plots = dict()
         self.jointPlots = dict()
-        for key in self.sim.bodies.keys() :
+        for key in list(self.sim.bodies.keys()) :
             self.plots[key], = self.ax.plot(0,0, color=[0,0,0])
-        for key in self.sim.joints.keys() :
+        for key in list(self.sim.joints.keys()) :
             self.jointPlots[key], = self.ax.plot(0,0, lw=4, color=[1,0,0])       
         self.ax.set_xlim([0,30])
         self.ax.set_ylim([0,30])
@@ -205,16 +205,16 @@ class InlineTestPlotter:
         
         self.sim_step(self.sim)
 
-        for key, body_plot in self.plots.items():
+        for key, body_plot in list(self.plots.items()):
             body = self.sim.bodies[key]
             vercs = np.vstack(body.fixtures[0].shape.vertices)
-            vercs = vercs[range(len(vercs))+[0]]
+            vercs = vercs[list(range(len(vercs)))+[0]]
             data = np.vstack([ body.GetWorldPoint(vercs[x]) 
                 for x in range(len(vercs))])
             body_plot.set_data(*data.T)
         self.fig.canvas.draw()
         
-        return tuple([self.fig] + self.plots.values())
+        return tuple([self.fig] + list(self.plots.values()))
     
     def makeVideo(self, frames=2000, interval=20):
 
@@ -272,6 +272,7 @@ if __name__ == "__main__":
         sim.step()  
 
     if is_inline == True:
+
         inline_sim = Box2DSim("arm.json")
         inline_sim.step = step
                       

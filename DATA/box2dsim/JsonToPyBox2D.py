@@ -71,7 +71,7 @@ def add_joints(b2_world, jsw):
     """
 
     joint_refs = dict()
-    if "joint" in jsw.keys():
+    if "joint" in list(jsw.keys()):
         # add joints to world
         for joint in jsw["joint"]:
             key, ref = add_joint(b2_world, jsw, joint)
@@ -96,7 +96,7 @@ def add_bodies(b2_world, jsw):
     """
 
     body_refs = dict()
-    if "body" in jsw.keys():
+    if "body" in list(jsw.keys()):
         # add bodies to world
         for js_body in jsw["body"]:
             key, ref = add_body(b2_world, jsw, js_body)
@@ -372,7 +372,7 @@ def add_fixture( b2_world_body, jsw, jsw_fixture ):
 
     # special case for rube documentation of
     #"filter-categoryBits": 1, //if not present, interpret as 1
-    if "filter-categoryBits" in jsw_fixture.keys():
+    if "filter-categoryBits" in list(jsw_fixture.keys()):
         setAttr(jsw_fixture, "filter-categoryBits", 
                 fixtureDef, "categoryBits")
     else:
@@ -380,7 +380,7 @@ def add_fixture( b2_world_body, jsw, jsw_fixture ):
 
     # special case for Rube Json property
     #"filter-maskBits": 1, //if not present, interpret as 65535
-    if "filter-maskBits" in jsw_fixture.keys():
+    if "filter-maskBits" in list(jsw_fixture.keys()):
         setAttr(jsw_fixture, "filter-maskBits", fixtureDef, "maskBits")
     else:
         fixtureDef.maskBits = 65535
@@ -394,7 +394,7 @@ def add_fixture( b2_world_body, jsw, jsw_fixture ):
     # fixture has one shape that is
     # polygon, circle or chain in json
     # chain may be open or loop, or edge in pyBox2D
-    if "circle" in jsw_fixture.keys():  # works ok
+    if "circle" in list(jsw_fixture.keys()):  # works ok
         if jsw_fixture["circle"]["center"] == 0:
             center_b2Vec2 = b2.b2Vec2(0, 0)
         else:
@@ -406,13 +406,13 @@ def add_fixture( b2_world_body, jsw, jsw_fixture ):
             radius=jsw_fixture["circle"]["radius"],
             )
 
-    if "polygon" in jsw_fixture.keys():  # works ok
+    if "polygon" in list(jsw_fixture.keys()):  # works ok
         polygon_vertices = rubeVecArrToB2Vec2Arr(
             jsw_fixture["polygon"]["vertices"]
             )
         fixtureDef.shape = b2.b2PolygonShape(vertices=polygon_vertices)
 
-    if "chain" in jsw_fixture.keys():  # works ok
+    if "chain" in list(jsw_fixture.keys()):  # works ok
         chain_vertices = rubeVecArrToB2Vec2Arr(
             jsw_fixture["chain"]["vertices"]
             )
@@ -420,7 +420,7 @@ def add_fixture( b2_world_body, jsw, jsw_fixture ):
         if len(chain_vertices) >= 3:
             # closed-loop b2LoopShape
             # Done
-            if "hasNextVertex" in jsw_fixture["chain"].keys():
+            if "hasNextVertex" in list(jsw_fixture["chain"].keys()):
 
                 # del last vertice to prevent crash from first and last
                 # vertices being to close
@@ -496,13 +496,13 @@ def setAttr(
 
 
     """
-    if source_key in source_dict.keys():
+    if source_key in list(source_dict.keys()):
         if not target_attr:
             target_attr = source_key
         if hasattr(target_obj, target_attr):
             setattr(target_obj, target_attr, source_dict[source_key])
         else:
-            print("No attr: " + target_attr + " in object")
+            print(("No attr: " + target_attr + " in object"))
     
 
 def rubeVecToB2Vec2(rube_vec):
@@ -556,7 +556,7 @@ def setB2Vec2Attr(source_dict, source_key, target_obj, target_attr=None):
         :type target_attr: string
     """
 
-    if source_key in source_dict.keys():
+    if source_key in list(source_dict.keys()):
         # setting attr name
         if target_attr is None:
             target_attr = source_key
