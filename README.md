@@ -18,6 +18,8 @@ A simple [gym](http://gym.openai.com/) environment using [pybox2d](https://githu
        pip install -e .
 
 ## Basic usage
+### One arm - scenario
+
     import gym
     import box2dsim
 
@@ -27,7 +29,7 @@ A simple [gym](http://gym.openai.com/) environment using [pybox2d](https://githu
       env.render()
       env.step(env.action_space.sample())
 
-### Actions
-### Observations
-### Reward
-### Done
+#### Actions
+#### Observations
+#### Reward
+#### Done
