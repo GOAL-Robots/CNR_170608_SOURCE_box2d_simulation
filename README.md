@@ -6,15 +6,8 @@ A simple gym environment using [pybox2d](https://github.com/pybox2d/pybox2d/wiki
 * [Install](#install)
 * [Basic usage](#basic-usage)
 
-<a id="install"></a>
 ## Install
-
-Saaaaa
-
 ## Basic usage
-
-
-
 ### Actions
 ### Observations
 ### Reward
