@@ -1,9 +1,12 @@
 import numpy as np
-import pybullet
 import gym
 from gym import spaces
 from .Simulator import Box2DSim as Sim, TestPlotter 
 import pkg_resources
+
+def DefaultRewardFun(observation):
+    return np.sum(observation['TOUCH_SENSORS'])
+
 
 class Box2DSimOneArmEnv(gym.Env):
     """ A single 2D arm Box2DSimwith a box-shaped object
@@ -11,7 +14,7 @@ class Box2DSimOneArmEnv(gym.Env):
     
     metadata = {'render.modes': ['human', 'inline']}
     
-    def __init__(self):
+    def __init__(self, reward_fun = None):
 
         super(Box2DSimOneArmEnv, self).__init__()
 
@@ -21,20 +24,20 @@ class Box2DSimOneArmEnv(gym.Env):
         self.robot_parts_names = ['Base', 'Arm1', 'Arm2',
                 'Arm3', 'claw10', 'claw20', 'claw11', 'claw21']
 
-        self.joint_names = ['Arm1_to_Arm2', 'Arm2_to_Arm3',
+        self.joint_names = ['Ground_to_Arm1', 'Arm1_to_Arm2', 'Arm2_to_Arm3',
                 'Arm3_to_Claw10', 'Arm3_to_Claw20', 'Claw10_to_Claw11',
-                'Claw20_to_Claw21', 'Ground_to_Arm1'] 
+                'Claw20_to_Claw21'] 
 
-        self.object_name = "object"
+        self.object_name = "Object"
 
-        self.num_joints = 5
+        self.num_joints = 7
         self.num_touch_sensors = 7
 
         # Define action and observation space
         # They must be gym.spaces objects
         # Example when using discrete actions:
         self.action_space = spaces.Box(
-            -np.inf, np.inf, [self.num_joints], dtype = float)
+            -np.pi, np.pi, [self.num_joints], dtype = float)
         
         self.observation_space = gym.spaces.Dict({
             "JOINT_POSITIONS": gym.spaces.Box(-np.inf, np.inf, [self.num_joints], dtype = float),
@@ -44,14 +47,19 @@ class Box2DSimOneArmEnv(gym.Env):
         
         self.renderer = None
 
+        self.reward_fun = reward_fun
+        if self.reward_fun is None:
+            self.reward_fun = DefaultRewardFun
+
+
     def step(self, action):
-        assert (np.isfinite(action).all())
+        assert ( ((-np.pi > action) | (action < np.pi)).all() )
         assert(len(action) == self.num_joints)
 
         # do action
         for j, joint in enumerate(self.joint_names):
-            sim.move(joint, action[j])
-        sim.step()  
+            self.sim.move(joint, action[j])
+        self.sim.step()  
         
         # get observation
         joints = [self.sim.joints[name].angle for name in self.joint_names]

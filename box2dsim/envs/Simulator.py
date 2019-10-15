@@ -148,59 +148,6 @@ class TestPlotter:
                     for x in range(len(vercs))])
                 self.polygons[key].set_xy(data)
             self.fig.canvas.flush_events()
+            plt.pause(0.05)
 
-
-if __name__ == "__main__":
-   
-    """
-    --------------------------------
-    Body names:  
-
-                Base,
-                Arm1, 
-                Arm2, 
-                Arm3, 
-                claw10, 
-                claw20, 
-                claw11, 
-                claw21,
-                Object
-
-    Joint names:  
-
-                Arm1_to_Arm2, 
-                Arm2_to_Arm3, 
-                Arm3_to_Claw10, 
-                Arm3_to_Claw20, 
-                Claw10_to_Claw11, 
-                Claw20_to_Claw21, 
-                Ground_to_Arm1
-    --------------------------------
-    """
-
-    is_inline = False 
-    plt.ion()
-    sim = Box2DSim("./models/arm.json")
-        
-    def step_function(sim):
-        sim.move("Arm1_to_Arm2", -np.pi*1/3.)
-        sim.move("Arm2_to_Arm3", -np.pi*1/3.)
-        sim.move("Arm3_to_Claw10", -np.pi/4.)
-        sim.move("Arm3_to_Claw20", np.pi/4.) 
-        sim.step()  
-
-    if is_inline == True:
-        inline_sim = Box2DSim("./models/arm.json")
-        inline_sim.step = step
-                      
-        plotter = InlineTestPlotter(sim, sim_step=step_function)
-        plotter.makeVideo()
-        plotter.save()
-     
-    elif is_inline == False:
-             
-        plotter = TestPlotter(sim, sim_step=step_function)
-        for t in range(1000):
-            plotter.step()
-            plt.pause(0.00001)
 
