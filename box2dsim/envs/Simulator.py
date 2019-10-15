@@ -1,5 +1,5 @@
-import JsonToPyBox2D as json2d
-from PID import PID
+from . import JsonToPyBox2D as json2d
+from .PID import PID
 import time
 import sys
 
@@ -37,14 +37,12 @@ class  Box2DSim(object):
         self.joint_pids = { ("%s" % k): PID(dt=self.dt) 
                 for k in list(self.joints.keys()) }
         
-    def contacts(self, bodyA, bodyB):
-        
+    def contacts(self, bodyA, bodyB): 
         contacts = 0
         for ce in self.bodies[bodyA].contacts:
             if ce.contact.touching is True:
                 if ce.contact.fixtureB.body  == self.bodies[bodyB]:
-                        contacts += 1
-                
+                        contacts += 1       
         return contacts
     
     def move(self, joint_name, angle):
@@ -56,14 +54,13 @@ class  Box2DSim(object):
         for key in list(self.joints.keys()):
             self.joint_pids[key].step(self.joints[key].angle)
             self.joints[key].motorSpeed = (self.joint_pids[key].output)
-
         self.world.Step(self.dt, self.vel_iters, self.pos_iters)
         
 
 #------------------------------------------------------------------------------ 
 #------------------------------------------------------------------------------ 
 
-from convert2pixels import path2pixels
+from .convert2pixels import path2pixels
 
 class VisualSensor:
     """ Compute the retina state at each ste of simulation
@@ -115,26 +112,22 @@ from matplotlib.collections import PatchCollection
 class TestPlotter:
     """ Plotter of simulations
     Builds a simple matplotlib graphic environment 
-    and run single steps of the simulation within it
+    and render single steps of the simulation within it
      
     """
 
-    def __init__(self, sim, sim_step):
+    def __init__(self, env):
         """
-            :param sim: a simulator object
-            :type sim: Box2DSim
+            :param env: a envulator object
+            :type env: Box2Denv
             
-            :param sim_step: a function defining a single step of simulation
-            :type sim_step: callable object
-      """
-
-        self.sim = sim
-        self.sim_step = sim_step
+            """
+        self.env = env
         self._last_screen_update = time.time()
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111, aspect="equal")
         self.polygons = {}
-        for key in self.sim.bodies.keys() :
+        for key in self.env.sim.bodies.keys() :
             self.polygons[key] = Polygon([[0, 0]], True)
             self.ax.add_artist(self.polygons[key])
         self.ax.set_xlim([0, 30])
@@ -142,88 +135,20 @@ class TestPlotter:
         self.fig.show()
 
     def step(self) :
-        """ Run a single simulator step
+        """ Run a single envulator step
         """
         
-        self.sim_step(self.sim)
         t = time.time()
         if t - self._last_screen_update > 1 / 15:
             self._last_screen_update = t
             for key in self.polygons:
-                body = self.sim.bodies[key]
+                body = self.env.sim.bodies[key]
                 vercs = np.vstack(body.fixtures[0].shape.vertices)
                 data = np.vstack([ body.GetWorldPoint(vercs[x]) 
                     for x in range(len(vercs))])
                 self.polygons[key].set_xy(data)
             self.fig.canvas.flush_events()
 
-#------------------------------------------------------------------------------ 
-
-import matplotlib.animation as animation
-
-class InlineTestPlotter:
-    """ Plotter of inline simulations
-    Builds a simple matplotlib graphic environment 
-    and run the wjole simulation to produece a video
-     
-    """
-    def __init__(self, sim, sim_step):
-        """
-            :param sim: a simulator object
-            :type sim: Box2DSim
-            
-            :param sim_step: a function defining a single step of simulation
-            :type sim_step: callable object
-        """
-        
-        self.sim = sim
-        self.sim_step = sim_step
- 
-        self.fig = plt.figure()
-        self.ax = self.fig.add_subplot(111, aspect="equal")
-        self.plots = dict()
-        self.jointPlots = dict()
-        for key in self.sim.bodies.keys() :
-            self.plots[key], = self.ax.plot(0,0, color=[0,0,0])
-        for key in self.sim.joints.keys() :
-            self.jointPlots[key], = self.ax.plot(0,0, lw=4, color=[1,0,0])       
-        self.ax.set_xlim([0,30])
-        self.ax.set_ylim([0,30])
-
-
-    def step(self) :
-        """
-        runs a single step of the simulation
-        and plots it into a matplotlib figure
-        """
-        
-        self.sim_step(self.sim)
- 
-        for key, body_plot in self.plots.items():
-            body = self.sim.bodies[key]
-            vercs = np.vstack(body.fixtures[0].shape.vertices)
-            vercs = vercs[range(len(vercs))+[0]]
-            data = np.vstack([ body.GetWorldPoint(vercs[x]) 
-                for x in range(len(vercs))])
-            body_plot.set_data(*data.T)
-            
-        return tuple([self.fig] + self.plots.values())
-    
-    def makeVideo(self, frames=2000, interval=20):
-
-        def ani_step(frame): return self.step()
-        self.ani = animation.FuncAnimation(self.fig, func=ani_step, 
-                frames=frames, interval=interval,
-                blit=True)
-        return self.ani
-    
-    def save(self, filename="sim"):
-        Writer = animation.writers['ffmpeg']
-        writer = Writer(fps=30, codec="h264", metadata=dict(artist='Me'), bitrate=1800)       
-        self.ani.save('%s.avi' % filename, writer=writer)
-      
-#------------------------------------------------------------------------------
-#------------------------------------------------------------------------------ 
 
 if __name__ == "__main__":
    

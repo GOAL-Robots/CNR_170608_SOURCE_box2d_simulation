@@ -1,5 +1,3 @@
-import JsonToPyBox2D as json2d
-
 class PID(object) :
 
     def __init__(self, dt=0.01, Kp=20.0, Ki=1.0, Kd=1.0 ):
