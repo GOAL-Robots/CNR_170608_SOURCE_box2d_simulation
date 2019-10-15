@@ -10,7 +10,7 @@ class  Box2DSim(object):
     """ 2D physics using box2d and a json conf file
     """
 
-    def __init__(self, world_file, dt=1/100.0, vel_iters=10, pos_iters=20):
+    def __init__(self, world_file, dt=1/120.0, vel_iters=3, pos_iters=2):
         """ 
 
             :param world_file: the json file from which all objects are created
@@ -116,38 +116,53 @@ class TestPlotter:
      
     """
 
-    def __init__(self, env):
+    def __init__(self, env, offline=False):
         """
             :param env: a envulator object
             :type env: Box2Denv
             
             """
         self.env = env
-        self._last_screen_update = time.time()
+        self.offline = offline
         self.fig = plt.figure()
         self.ax = self.fig.add_subplot(111, aspect="equal")
         self.polygons = {}
         for key in self.env.sim.bodies.keys() :
-            self.polygons[key] = Polygon([[0, 0]], True)
+            if key in self.env.robot_parts_names:
+                self.polygons[key] = Polygon([[0, 0]],
+                        ec=[0, 0, 0, 1],
+                        fc=[.6, 0.6, 0.6, 1], 
+                        closed=True)
+            else:
+                self.polygons[key] = Polygon([[0, 0]],
+                        ec=[0.0, 0.1, 0.0, 1], 
+                        fc=[0.3, 0.8, 0.3, 1], 
+                        closed=True)
+
             self.ax.add_artist(self.polygons[key])
         self.ax.set_xlim([0, 30])
         self.ax.set_ylim([0, 30])
-        self.fig.show()
+        if not self.offline:
+            self.fig.show()
+        else:
+            self.ts = 0
 
     def step(self) :
         """ Run a single envulator step
         """
         
-        t = time.time()
-        if t - self._last_screen_update > 1 / 15:
-            self._last_screen_update = t
-            for key in self.polygons:
-                body = self.env.sim.bodies[key]
-                vercs = np.vstack(body.fixtures[0].shape.vertices)
-                data = np.vstack([ body.GetWorldPoint(vercs[x]) 
-                    for x in range(len(vercs))])
-                self.polygons[key].set_xy(data)
+        for key in self.polygons:
+            body = self.env.sim.bodies[key]
+            vercs = np.vstack(body.fixtures[0].shape.vertices)
+            data = np.vstack([ body.GetWorldPoint(vercs[x]) 
+                for x in range(len(vercs))])
+            self.polygons[key].set_xy(data)
+        if not self.offline:
             self.fig.canvas.flush_events()
-            plt.pause(0.05)
+            self.fig.canvas.draw()
+        else:
+            self.fig.savefig("frame%06d" % self.ts)
+            self.fig.canvas.draw()
+            self.ts += 1
 
 

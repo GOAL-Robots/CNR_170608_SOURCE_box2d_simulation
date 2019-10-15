@@ -12,7 +12,7 @@ class Box2DSimOneArmEnv(gym.Env):
     """ A single 2D arm Box2DSimwith a box-shaped object
     """
     
-    metadata = {'render.modes': ['human', 'inline']}
+    metadata = {'render.modes': ['human', 'offline']}
     
     def __init__(self, reward_fun = None):
 
@@ -24,13 +24,14 @@ class Box2DSimOneArmEnv(gym.Env):
         self.robot_parts_names = ['Base', 'Arm1', 'Arm2',
                 'Arm3', 'claw10', 'claw20', 'claw11', 'claw21']
 
-        self.joint_names = ['Ground_to_Arm1', 'Arm1_to_Arm2', 'Arm2_to_Arm3',
-                'Arm3_to_Claw10', 'Arm3_to_Claw20', 'Claw10_to_Claw11',
-                'Claw20_to_Claw21'] 
+        self.joint_names = [
+                'Ground_to_Arm1', 'Arm1_to_Arm2', 'Arm2_to_Arm3',
+                'Arm3_to_Claw10', 'Claw20_to_Claw21', 
+                'Arm3_to_Claw20', 'Claw10_to_Claw11'] 
 
         self.object_name = "Object"
 
-        self.num_joints = 7
+        self.num_joints = 5
         self.num_touch_sensors = 7
 
         # Define action and observation space
@@ -53,10 +54,13 @@ class Box2DSimOneArmEnv(gym.Env):
 
 
     def step(self, action):
-        assert ( ((-np.pi > action) | (action < np.pi)).all() )
         assert(len(action) == self.num_joints)
 
         # do action
+        action[:-2] = np.maximum(-np.pi*0.5, np.minimum(np.pi*0.5, action[:-2]))
+        action[-2:] = -np.maximum( 0, np.minimum(np.pi*0.5, action[-2:]))
+        action[-1] = -np.maximum( 0, np.minimum(2*action[-2], action[-1]))
+        action = np.hstack((action, -action[-2:]))
         for j, joint in enumerate(self.joint_names):
             self.sim.move(joint, action[j])
         self.sim.step()  
@@ -87,9 +91,12 @@ class Box2DSimOneArmEnv(gym.Env):
         self.sim = Sim(world_file)
 
     def render(self, mode='human'):
-        if self.renderer is None:
-            self.renderer = TestPlotter(self)
         if mode == 'human':
-            self.renderer.step()
+            if self.renderer is None:
+                self.renderer = TestPlotter(self)
+        elif mode == 'offline': 
+            if self.renderer is None:
+                self.renderer = TestPlotter(self, offline=True)
+        self.renderer.step()
  
 

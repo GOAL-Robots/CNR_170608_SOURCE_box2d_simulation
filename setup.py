@@ -16,5 +16,6 @@ setup(name='box2dsim',
             'install': MyInstall,
             'egg_info': MyEgg
             },
-        install_requires=['gym', 'box2d', 'numpy', 'matplotlib']
+        install_requires=['gym', 'box2d', 'numpy', 
+            'matplotlib','scikit-image']
         )

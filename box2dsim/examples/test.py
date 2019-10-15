@@ -1,15 +1,13 @@
-import os, time
-import inspect
-currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-parentdir = os.path.dirname(os.path.dirname(currentdir))
-os.sys.path.insert(0,parentdir)
-
+import numpy as np
 import gym
 import box2dsim
 
-if __name__ == "__main__":
-    
-    env = gym.make("Box2DSimOneArm-v0")
-    env.render("human")
-    time.sleep(10)
+env = gym.make('Box2DSimOneArm-v0')
+
+stime = 1000
+for t in range(stime):  
+  env.render()
+  a = env.action_space.sample()
+  env.step(a)
+
 
