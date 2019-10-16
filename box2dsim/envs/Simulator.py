@@ -10,7 +10,7 @@ class  Box2DSim(object):
     """ 2D physics using box2d and a json conf file
     """
 
-    def __init__(self, world_file, dt=1/120.0, vel_iters=3, pos_iters=2):
+    def __init__(self, world_file, dt=1/130.0, vel_iters=3, pos_iters=2):
         """ 
 
             :param world_file: the json file from which all objects are created

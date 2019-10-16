@@ -1,6 +1,6 @@
 class PID(object) :
 
-    def __init__(self, dt=0.01, Kp=20.0, Ki=1.0, Kd=1.0 ):
+    def __init__(self, dt=0.01, Kp=30.0, Ki=10.0, Kd=1.8 ):
        
         self.dt = dt
         self.previous_error = 0.0

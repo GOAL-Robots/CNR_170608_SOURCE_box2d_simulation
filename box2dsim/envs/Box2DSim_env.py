@@ -56,6 +56,8 @@ class Box2DSimOneArmEnv(gym.Env):
     def step(self, action):
         assert(len(action) == self.num_joints)
 
+        action = np.hstack(action)
+
         # do action
         action[:-2] = np.maximum(-np.pi*0.5, np.minimum(np.pi*0.5, action[:-2]))
         action[-2:] = -np.maximum( 0, np.minimum(np.pi*0.5, action[-2:]))
