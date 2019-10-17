@@ -47,10 +47,18 @@ The action attribute of env.step must be a vector of 7 joint positions in radian
 
 
 </TD>
-<TD><img src="docs/pics/one_arm_scenario.png" alt="one_arm_scenario" width="80%"></TD>
-<TD><img src="docs/figs/kuka_gripper_joints.png" alt="kuka_gripper_joints" width="80%"></TD>
+<TD><img src="docs/pics/one_arm_scenario.png" alt="one_arm_scenario" width="100%"></TD>
 </TR>
 </TABLE>
+
 #### Observations
+
+The observation object returned byenv.step is a dictionary:
+
+    observation["joint_positions"] is a vector containing the current angles of the 9 joints
+    observation["touch_sensors"] is a vector containing the current touch intensity at the four touch sensors (see figure below)
+    observation["retina"] is a 240x320x3 array with the current top camera image
+    observation["goal"] is a 240x320x3 array with the target top camera image (all zeros except for the extrinsic phase, see below the task description)
+
 #### Reward
 #### Done
