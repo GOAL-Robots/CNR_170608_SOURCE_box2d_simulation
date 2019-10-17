@@ -1,7 +1,6 @@
 from . import JsonToPyBox2D as json2d
 from .PID import PID
-import time
-import sys
+import time, sys, os, glob 
 
 #------------------------------------------------------------------------------ 
 #------------------------------------------------------------------------------ 
@@ -160,7 +159,10 @@ class TestPlotter:
             self.fig.canvas.flush_events()
             self.fig.canvas.draw()
         else:
-            self.fig.savefig("frame%06d" % self.ts)
+            if not os.path.exists("frames"):
+                os.makedirs("frames")
+
+            self.fig.savefig("frames/frame%06d.png" % self.ts, dpi=200)
             self.fig.canvas.draw()
             self.ts += 1
 
