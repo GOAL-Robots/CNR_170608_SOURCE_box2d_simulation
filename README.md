@@ -36,14 +36,14 @@ The two possible values of the argument to be passed to env.render() are:
 * "human": open a matplotlib figure and update it at each call.
 * "offline": save a frame into a png file at each call. Files are saved into the local folder 'frames'. This  folder is created if it does not exist.
 
-<TABLE width="50%" BORDER="0" align="center">
+<TABLE width="50%" BORDER="0">
 <TR>
-<TD>
+<TD align="center">
 <img src="docs/pics/sim.gif" alt="one_arm_scenario" width="60%">
 </TD>
 </TR>
 <TR>
-<TD>
+<TD align="center">
 Example in [test.py](box2dsim/examples/test.py)
 </TD>
 </TR>
