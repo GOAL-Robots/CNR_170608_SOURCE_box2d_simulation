@@ -39,7 +39,7 @@ The two possible values of the argument to be passed to env.render() are:
 <table>
        <tr>
               <td align="center">
-                     <img src="docs/pics/sim.gif" alt="one_arm_scenario" width="60%">
+                     <img src="docs/pics/sim.gif" alt="one_arm_scenario" width="100%">
              </td>
        </tr>
        <tr>
