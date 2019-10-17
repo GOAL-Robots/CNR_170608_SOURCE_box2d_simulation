@@ -27,7 +27,7 @@ A simple [gym](http://gym.openai.com/) environment using [pybox2d](https://githu
 
     for t in range(10):  
       env.render()
-      env.step(env.action_space.sample())
+      observation = env.step(env.action_space.sample())
 
 #### Actions
 
@@ -53,12 +53,22 @@ The action attribute of env.step must be a vector of 7 joint positions in radian
 
 #### Observations
 
-The observation object returned byenv.step is a dictionary:
+The observation object returned by env.step is a dictionary:
 
-    observation["joint_positions"] is a vector containing the current angles of the 9 joints
-    observation["touch_sensors"] is a vector containing the current touch intensity at the four touch sensors (see figure below)
-    observation["retina"] is a 240x320x3 array with the current top camera image
-    observation["goal"] is a 240x320x3 array with the target top camera image (all zeros except for the extrinsic phase, see below the task description)
+* observation["JOINT_POSITIONS"] is a vector containing the current angles of the 7:w
+ joints
+* observation["TOUCH_SENSORS"] is a vector containing the current touch intensity at the four touch sensors (see figure below)
+* observation["OBJ_POSITION"] coordinates of the center of mass of the external object
 
 #### Reward
+
+The reward value returned by env.step is always put to 0.
+
 #### Done
+
+The done value returned by env.step is always set to False.
+
+#### Info
+
+The info value returned by env.step is always set to an empy set {}.
+  .
