@@ -34,6 +34,7 @@ A simple [gym](http://gym.openai.com/) environment using [pybox2d](https://githu
 The two possible values of the argument to be passed to env.render() are:
 * "human": open a matplotlib figure and update it at each call.
 * "offline": save a frame into a png file at each call. Files are saved into the local folder 'frames'. This  folder is created if it does not exist.
+
 <TABLE " width="60%" BORDER="0">
 <TR>
 <TD>
