@@ -18,7 +18,7 @@ A simple [gym](http://gym.openai.com/) environment using [pybox2d](https://githu
        pip install -e .
 
 ## Basic usage
-### One arm - scenario
+### One-arm scenario
 
     import gym
     import box2dsim
@@ -30,6 +30,27 @@ A simple [gym](http://gym.openai.com/) environment using [pybox2d](https://githu
       env.step(env.action_space.sample())
 
 #### Actions
+
+The action attribute of env.step must be a vector of 7 joint positions in radiants. The first 7 joints have a range between -Pi/2 and +Pi/2. The two gripper joints have a range between 0 and +Pi/2. They are also coupled so that the second joint will be at most twice the angle of the first one.
+
+<TABLE " width="100%" BORDER="0">
+<TR>
+<TD>
+
+| index |  joint name               |
+| ----- | ------------------------- |
+|  0    |  Ground_to_Arm1           |
+|  1    |  Arm1_to_Arm2             |
+|  2    |  Arm2_to_Arm3             |
+|  3    |  Arm3_to_Claw20           |
+|  4    |  Claw20_to_Claw21         |
+
+
+</TD>
+<TD><img src="docs/pics/one_arm_scenario.png" alt="one_arm_scenario" width="80%"></TD>
+<TD><img src="docs/figs/kuka_gripper_joints.png" alt="kuka_gripper_joints" width="80%"></TD>
+</TR>
+</TABLE>
 #### Observations
 #### Reward
 #### Done
