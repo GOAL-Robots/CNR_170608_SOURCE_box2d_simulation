@@ -60,8 +60,8 @@ class Box2DSimOneArmEnv(gym.Env):
 
         # do action
         action[:-2] = np.maximum(-np.pi*0.5, np.minimum(np.pi*0.5, action[:-2]))
+        action[-1] = np.maximum( 0, np.minimum(2*action[-2], action[-1]))
         action[-2:] = -np.maximum( 0, np.minimum(np.pi*0.5, action[-2:]))
-        action[-1] = -np.maximum( 0, np.minimum(2*action[-2], action[-1]))
         action = np.hstack((action, -action[-2:]))
         for j, joint in enumerate(self.joint_names):
             self.sim.move(joint, action[j])

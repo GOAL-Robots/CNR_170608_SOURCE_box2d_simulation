@@ -10,7 +10,7 @@ class  Box2DSim(object):
     """ 2D physics using box2d and a json conf file
     """
 
-    def __init__(self, world_file, dt=1/130.0, vel_iters=3, pos_iters=2):
+    def __init__(self, world_file, dt=1/80.0, vel_iters=30, pos_iters=2):
         """ 
 
             :param world_file: the json file from which all objects are created
@@ -50,7 +50,6 @@ class  Box2DSim(object):
         pid.setpoint = angle
         
     def step(self):
-
         for key in list(self.joints.keys()):
             self.joint_pids[key].step(self.joints[key].angle)
             self.joints[key].motorSpeed = (self.joint_pids[key].output)
@@ -140,8 +139,8 @@ class TestPlotter:
                         closed=True)
 
             self.ax.add_artist(self.polygons[key])
-        self.ax.set_xlim([0, 30])
-        self.ax.set_ylim([0, 30])
+        self.ax.set_xlim([-10, 30])
+        self.ax.set_ylim([-10, 30])
         if not self.offline:
             self.fig.show()
         else:
