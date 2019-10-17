@@ -18,6 +18,7 @@ A simple [gym](http://gym.openai.com/) environment using [pybox2d](https://githu
        pip install -e .
 
 ## Basic usage
+
 ### One-arm scenario
 
     import gym
@@ -35,10 +36,10 @@ The two possible values of the argument to be passed to env.render() are:
 * "human": open a matplotlib figure and update it at each call.
 * "offline": save a frame into a png file at each call. Files are saved into the local folder 'frames'. This  folder is created if it does not exist.
 
-<TABLE " width="60%" BORDER="0">
+<TABLE width="50%" BORDER="0" align="center">
 <TR>
 <TD>
-<img src="docs/pics/sim.gif" alt="one_arm_scenario" width="100%">
+<img src="docs/pics/sim.gif" alt="one_arm_scenario" width="60%">
 </TD>
 </TR>
 <TR>
@@ -47,11 +48,12 @@ Example in [test.py](box2dsim/examples/test.py)
 </TD>
 </TR>
 </TABLE>
+
 #### Actions
 
 The action attribute of env.step must be a vector of 7 joint positions in radiants. The first 7 joints have a range between -Pi/2 and +Pi/2. The two gripper joints have a range between 0 and +Pi/2. They are also coupled so that the second joint will be at most twice the angle of the first one.
 
-<TABLE " width="100%" BORDER="0">
+<TABLE width="100%" BORDER="0">
 <TR>
 <TD>
 
