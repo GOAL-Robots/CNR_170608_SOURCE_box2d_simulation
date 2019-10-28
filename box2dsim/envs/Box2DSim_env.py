@@ -14,7 +14,7 @@ class Box2DSimOneArmEnv(gym.Env):
     
     metadata = {'render.modes': ['human', 'offline']}
     
-    def __init__(self, reward_fun = None):
+    def __init__(self):
 
         super(Box2DSimOneArmEnv, self).__init__()
 
@@ -48,7 +48,11 @@ class Box2DSimOneArmEnv(gym.Env):
         
         self.renderer = None
 
-        self.reward_fun = reward_fun
+        if self.reward_fun is None:
+            self.reward_fun = DefaultRewardFun
+
+    def set_reward_fun(self, rew_fun):    
+        self.reward_fun = rew_fun     
         if self.reward_fun is None:
             self.reward_fun = DefaultRewardFun
 
