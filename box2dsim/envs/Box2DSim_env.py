@@ -48,10 +48,9 @@ class Box2DSimOneArmEnv(gym.Env):
         
         self.renderer = None
 
-        if self.reward_fun is None:
-            self.reward_fun = DefaultRewardFun
+        self.set_reward_fun()
 
-    def set_reward_fun(self, rew_fun):    
+    def set_reward_fun(self, rew_fun=None):    
         self.reward_fun = rew_fun     
         if self.reward_fun is None:
             self.reward_fun = DefaultRewardFun
