@@ -3,7 +3,9 @@ from scipy import interpolate
 import gym
 import box2dsim
 
-env = gym.make('Box2DSimOneArm-v0')
+import matplotlib.pyplot as plt
+
+env = gym.make('Box2DSimOneArmOneEye-v0')
 
 stime = 120
 actions = np.pi*np.array([
@@ -24,9 +26,20 @@ for joint_idx, joint_timeline in enumerate(actions.T):
     joint_timeline_interp = f(x)
     actions_interp[:, joint_idx] = joint_timeline_interp
 
-for t in range(stime):  
-    env.render('offline')
-    action = actions_interp[t]
-    env.step(action)
+plt.ion()
+fig = plt.figure()
+ax = fig.add_subplot(121)
+screen = ax.imshow(np.zeros([2,2]), vmin=-0.3, vmax=1.3, cmap=plt.cm.binary)
+ax.set_axis_off()
+ax1 = fig.add_subplot(122)
+fov = ax1.imshow(np.zeros([2,2]), vmin=-0.3, vmax=1.3, cmap=plt.cm.binary)
+ax1.set_axis_off()
 
+for t in range(stime):  
+    env.render()
+    action = actions_interp[t]
+    observation,*_ = env.step(action)
+    screen.set_array(observation["VISUAL_SALIENCY"])
+    fov.set_array(observation["VISUAL_SENSOR"])
+    fig.canvas.draw()
 
