@@ -150,7 +150,7 @@ class TestPlotter:
      
     """
 
-    def __init__(self, env, offline=False):
+    def __init__(self, env, xlim=[-10, 30], ylim=[-10, 30], offline=False):
         """
         Args:
             env (Box2DSim): a emulator object
@@ -174,12 +174,15 @@ class TestPlotter:
                         closed=True)
 
             self.ax.add_artist(self.polygons[key])
-        self.ax.set_xlim([-10, 30])
-        self.ax.set_ylim([-10, 30])
+        self.ax.set_xlim(xlim)
+        self.ax.set_ylim(ylim)
         if not self.offline:
             self.fig.show()
         else:
             self.ts = 0
+
+    def onStep(self):
+        pass
 
     def step(self) :
         """ Run a single emulator step
@@ -191,6 +194,9 @@ class TestPlotter:
             data = np.vstack([ body.GetWorldPoint(vercs[x]) 
                 for x in range(len(vercs))])
             self.polygons[key].set_xy(data)
+        
+        self.onStep()
+
         if not self.offline:
             self.fig.canvas.flush_events()
             self.fig.canvas.draw()
@@ -202,4 +208,20 @@ class TestPlotter:
             self.fig.canvas.draw()
             self.ts += 1
 
+
+class TestPlotterOneEye(TestPlotter):
+    def __init__(self, *args, **kargs):
+
+        super(TestPlotterOneEye, self).__init__(*args, **kargs)
+        self.eyepos, = self.ax.plot(0, 0)
+
+
+    def onStep(self):
+
+        pos = np.copy(self.env.eye_pos)
+        x = pos[0] + [-2, -2, 2, 2, -2]
+        y = pos[1] + [-2,  2, 2, -2, -2]
+        self.eyepos.set_data(x, y)
+
+        
 

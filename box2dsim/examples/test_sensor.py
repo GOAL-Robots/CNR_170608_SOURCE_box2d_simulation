@@ -2,8 +2,10 @@ import numpy as np
 from scipy import interpolate
 import gym
 import box2dsim
-
 import matplotlib.pyplot as plt
+
+
+
 
 env = gym.make('Box2DSimOneArmOneEye-v0')
 
@@ -39,7 +41,10 @@ for t in range(stime):
     env.render()
     action = actions_interp[t]
     observation,*_ = env.step(action)
-    screen.set_array(observation["VISUAL_SALIENCY"])
+    sal = observation["VISUAL_SALIENCY"]
+        
+    screen.set_array(sal/sal.max())
     fov.set_array(observation["VISUAL_SENSOR"])
     fig.canvas.draw()
 
+input()

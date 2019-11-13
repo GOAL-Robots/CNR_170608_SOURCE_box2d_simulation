@@ -1,8 +1,9 @@
 import numpy as np
 import gym
 from gym import spaces
-from .Simulator import Box2DSim as Sim, TestPlotter, VisualSensor 
+from .Simulator import Box2DSim as Sim, TestPlotter, TestPlotterOneEye, VisualSensor 
 import pkg_resources
+from scipy import ndimage
 
 def DefaultRewardFun(observation):
     return np.sum(observation['TOUCH_SENSORS'])
@@ -45,8 +46,11 @@ class Box2DSimOneArmEnv(gym.Env):
             "TOUCH_SENSORS": gym.spaces.Box(0, np.inf, [self.num_touch_sensors], dtype = float),
             "OBJ_POSITION": gym.spaces.Box(-np.inf, np.inf, [2], dtype = float)
             })
-        
+       
+        self.rendererType = TestPlotter
         self.renderer = None
+        self.taskspace_xlim = [-10, 30]
+        self.taskspace_ylim = [-10, 30]
 
         self.set_reward_fun()
 
@@ -69,7 +73,7 @@ class Box2DSimOneArmEnv(gym.Env):
         for j, joint in enumerate(self.joint_names):
             self.sim.move(joint, action[j])
         self.sim.step()  
-    
+   
     def get_observation(self):
 
         joints = [self.sim.joints[name].angle for name in self.joint_names]
@@ -90,7 +94,6 @@ class Box2DSimOneArmEnv(gym.Env):
             "OBJ_POSITION": obj_pos }
         
         return observation
-
 
     def step(self, action):
 
@@ -115,10 +118,14 @@ class Box2DSimOneArmEnv(gym.Env):
 
         if mode == 'human':
             if self.renderer is None:
-                self.renderer = TestPlotter(self)
+                self.renderer = self.rendererType(self, 
+                        xlim=self.taskspace_xlim,
+                        ylim=self.taskspace_ylim)
         elif mode == 'offline': 
             if self.renderer is None:
-                self.renderer = TestPlotter(self, offline=True)
+                self.renderer = self.rendererType(self, 
+                        xlim=self.taskspace_xlim,
+                        ylim=self.taskspace_ylim, offline=True)
         self.renderer.step()
  
 class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
@@ -126,8 +133,21 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
     def __init__(self):
 
         super(Box2DSimOneArmOneEyeEnv, self).__init__()
-        self.bground = VisualSensor(self.sim, size=(32, 32), rng=(40, 40))
-        self.fovea = VisualSensor(self.sim, size=(40, 40), rng=(4, 4))
+
+        
+        self.bground_width = np.diff(self.taskspace_xlim)[0]
+        self.bground_height = np.diff(self.taskspace_ylim)[0]
+        self.bground_pixel_side = 32
+        self.bground = VisualSensor(self.sim,
+                size=(self.bground_pixel_side, self.bground_pixel_side), 
+                rng=(self.bground_width,  self.bground_height))  
+        
+        self.fovea_width = 4
+        self.fovea_height = 4
+        self.fovea_pixel_side = 40
+        self.fovea = VisualSensor(self.sim, 
+                size=(self.fovea_pixel_side, self.fovea_pixel_side), 
+                rng=(self.fovea_width,  self.fovea_height))  
 
  
         self.observation_space = gym.spaces.Dict({
@@ -138,6 +158,11 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
             "OBJ_POSITION": gym.spaces.Box(-np.inf, np.inf, [2], dtype = float)
             })
 
+        self.init_salience_filters()
+        self.eye_pos = [0,0]
+        self.rendererType = TestPlotterOneEye
+        self.t = 0
+
     def get_salient_points(self, bground):
         pass
 
@@ -146,20 +171,66 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
         self.set_action(action)
         joints, sensors, obj_pos = self.get_observation()
           
+        saliency = self.filter(self.bground.step([
+            self.bground_height/2 + self.taskspace_ylim[0], 
+            self.bground_width/2 + self.taskspace_xlim[0]]))
+        
         # visual
-        pos = np.array([self.sim.bodies[name].worldCenter 
-            for name in ["claw11", "claw12", "claw21", "claw22"]]).mean(0)
-
-        saliency = self.bground.step([10, 10])
-        visual = self.fovea.step(pos)
-  
+        if self.t == 0:
+            self.eye_pos = self.sample_visual(saliency) 
+            self.visual = self.fovea.step(self.eye_pos)
+        elif self.t % 5 == 0:
+            self.eye_pos = self.sample_visual(saliency) 
+            self.visual = self.fovea.step(self.eye_pos)
+    
         observation = {
             "JOINT_POSITIONS": joints,
             "TOUCH_SENSORS": sensors,
             "VISUAL_SALIENCY": saliency,
-            "VISUAL_SENSOR": visual,
+            "VISUAL_SENSOR": self.visual,
             "OBJ_POSITION": obj_pos }
         
+        self.t += 1
+
         return observation
 
+    def sample_visual(self, saliency):
+        
+        csal = saliency[::-1].ravel().cumsum()
+        sample = np.random.rand()
+        idx = np.argmax(np.diff(csal > sample))
+        idcs = np.array([
+            idx/self.bground_pixel_side,
+            idx%self.bground_pixel_side])/self.bground_pixel_side
+        pos = idcs*[self.bground_height, self.bground_width] + \
+                [self.taskspace_ylim[0], self.taskspace_xlim[0]]
+        print(pos)
+        return pos
+
+
+    def init_salience_filters(self):
+        """
+        Initialize filters to detect saliency in image
+        """
+    
+
+        self.flts = []
+
+        flt = 10*np.eye(3) - 1 
+        self.flts.append(np.copy(flt))
+        self.flts.append(np.copy(flt[::-1]))
+
+        flt = 10*(np.ones([3, 3])*[[0, 1, 0]]) - 1 
+        self.flts.append(np.copy(flt))
+        self.flts.append(np.copy(flt.T))
+
+        self.flts = np.array([flt/flt.sum() for flt in self.flts])
+        
+
+    def filter(self, img):
+        sal = np.maximum(0,
+            np.prod([ndimage.convolve(img, flt) 
+                for flt in self.flts], 0)) 
+        sal = sal/sal.sum() 
+        return sal
 
