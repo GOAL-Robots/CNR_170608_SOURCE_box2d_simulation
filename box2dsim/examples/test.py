@@ -25,7 +25,7 @@ for joint_idx, joint_timeline in enumerate(actions.T):
     actions_interp[:, joint_idx] = joint_timeline_interp
 
 for t in range(stime):  
-  env.render('offline')
+  env.render()
   action = actions_interp[t]
   env.step(action)
 

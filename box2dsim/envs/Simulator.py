@@ -11,18 +11,12 @@ class  Box2DSim(object):
 
     def __init__(self, world_file, dt=1/80.0, vel_iters=30, pos_iters=2):
         """ 
+        Args:
 
-            :param world_file: the json file from which all objects are created
-            :type world_file: string
-
-            :param dt: the amount of time to simulate, this should not vary.
-            :type dt: float
-
-            :param pos_iters: for the velocity constraint solver.
-            :type pos_iters: int
-
-            :param vel_iters: for the position constraint solver.
-            :type vel_iters: int
+            world_file (string): the json file from which all objects are created
+            dt (float): the amount of time to simulate, this should not vary.
+            pos_iters (int): for the velocity constraint solver.
+            vel_iters (int): for the position constraint solver.
             
         """
 
@@ -37,6 +31,18 @@ class  Box2DSim(object):
                 for k in list(self.joints.keys()) }
         
     def contacts(self, bodyA, bodyB): 
+        """ Read contacts between two parts of the simulation
+
+        Args:
+
+            bodyA (string): the name of the object A
+            bodyB (string): the name of the object B
+
+        Returns:
+
+            (int): number of contacts
+        """
+
         contacts = 0
         for ce in self.bodies[bodyA].contacts:
             if ce.contact.touching is True:
@@ -45,10 +51,20 @@ class  Box2DSim(object):
         return contacts
     
     def move(self, joint_name, angle):
+        """ change the angle of a joint
+
+        Args:
+
+            joint_name (string): the name of the joint to move
+            angle (float): the new angle position
+
+        """
         pid = self.joint_pids[joint_name]
         pid.setpoint = angle
         
     def step(self):
+        """ A simulation step
+        """
         for key in list(self.joints.keys()):
             self.joint_pids[key].step(self.joints[key].angle)
             self.joints[key].motorSpeed = (self.joint_pids[key].output)
@@ -58,47 +74,67 @@ class  Box2DSim(object):
 #------------------------------------------------------------------------------ 
 #------------------------------------------------------------------------------ 
 
-from .convert2pixels import path2pixels
+from matplotlib.path import Path
 
 class VisualSensor:
     """ Compute the retina state at each ste of simulation
     """
 
-    def __init__(self, sim):
+    def __init__(self, sim, size, rng):
         """
-            :param sim: a simulator object
-            :type sim: Box2DSim
+        Args:
+
+            sim (Box2DSim): a simulator object
+            size (int, int): width, height of the retina in pixels
+            rng (float, float): x and y range in the task space
+
         """
 
+        self.size = np.copy(size)
+
+        # make a canvas with coordinates
+        x = np.arange(-self.size[0]//2, self.size[0]//2) + 1
+        y = np.arange(-self.size[1]//2, self.size[1]//2) + 1
+        X, Y = np.meshgrid(x, y[::-1]) 
+        self.grid = np.vstack((X.flatten(), Y.flatten())).T 
+        self.scale = np.array(rng)/size
+        self.radius = np.mean(np.array(rng)/size)
         self.sim = sim
+        self.retina = np.zeros(self.size)
 
-    def step(self, xlim, ylim, resize=None) :
+    def step(self, focus) :
         """ Run a single simulator step
 
-            :param xlim: x boundaries of the retina
-            :param ylim: y boundaries of the retina
-            :param resize: x and y rescaling
+        Args:
 
-            :retun: a rescaled retina  state
+            sim (Box2DSim): a simulator object
+            focus (float, float): x, y of visual field center
+
+        Returns:
+
+            (np.ndarray): a rescaled retina state
         """
    
-        if resize is None:
-            xrng = xlim[1] - xlim[0] 
-            yrng = ylim[1] - ylim[0] 
-            resize = (xrng, yrng)
-        retina = np.zeros(resize)
+        self.retina *= 0
         for key in self.sim.bodies.keys():
             body = self.sim.bodies[key]
             vercs = np.vstack(body.fixtures[0].shape.vertices)
-            vercs = vercs[range(len(vercs))+[0]]
+            vercs = vercs[np.arange(len(vercs))+[0]]
             data = [body.GetWorldPoint(vercs[x]) 
                 for x in range(len(vercs))]
-            retina += path2pixels(data, xlim, ylim,
-                    resize_img=resize)
+            self.retina += self.path2pixels(data, focus)
 
-        return retina
+        return self.retina
 
+    def path2pixels(self, vertices, focus):
 
+        points = self.grid * self.scale + focus
+        
+        path = Path(vertices) # make a polygon
+        points_in_path = path.contains_points(points, radius=self.radius)
+        img = 1.0*points_in_path.reshape(*self.size, order='F').T #pixels 
+            
+        return img
 #------------------------------------------------------------------------------ 
 #------------------------------------------------------------------------------ 
 
@@ -114,10 +150,10 @@ class TestPlotter:
      
     """
 
-    def __init__(self, env, offline=False):
+    def __init__(self, env, xlim=[-10, 30], ylim=[-10, 30], offline=False):
         """
-            :param env: a envulator object
-            :type env: Box2Denv
+        Args:
+            env (Box2DSim): a emulator object
             
             """
         self.env = env
@@ -138,15 +174,18 @@ class TestPlotter:
                         closed=True)
 
             self.ax.add_artist(self.polygons[key])
-        self.ax.set_xlim([-10, 30])
-        self.ax.set_ylim([-10, 30])
+        self.ax.set_xlim(xlim)
+        self.ax.set_ylim(ylim)
         if not self.offline:
             self.fig.show()
         else:
             self.ts = 0
 
+    def onStep(self):
+        pass
+
     def step(self) :
-        """ Run a single envulator step
+        """ Run a single emulator step
         """
         
         for key in self.polygons:
@@ -155,6 +194,9 @@ class TestPlotter:
             data = np.vstack([ body.GetWorldPoint(vercs[x]) 
                 for x in range(len(vercs))])
             self.polygons[key].set_xy(data)
+        
+        self.onStep()
+
         if not self.offline:
             self.fig.canvas.flush_events()
             self.fig.canvas.draw()

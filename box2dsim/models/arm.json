@@ -139,7 +139,7 @@
         },
         {
             "angle": 0.0, 
-            "name": "claw10", 
+            "name": "claw11", 
             "position": {
                 "y": 23.5, 
                 "x": 4.4
@@ -171,7 +171,7 @@
         },
         {
             "angle": 0.0, 
-            "name": "claw20", 
+            "name": "claw21", 
             "position": {
                 "y": 23.5, 
                 "x": 3.6
@@ -203,7 +203,7 @@
         },
         {
             "angle": 0.0, 
-            "name": "claw11", 
+            "name": "claw12", 
             "position": {
                 "y": 26.8, 
                 "x": 4.5
@@ -235,7 +235,7 @@
         },
         {
             "angle": 0.0, 
-            "name": "claw21", 
+            "name": "claw22", 
             "position": {
                 "y": 26.8, 
                 "x": 3.5
@@ -346,7 +346,7 @@
             "enableMotor": true 
         },
         {
-            "name": "Arm3_to_Claw10", 
+            "name": "Arm3_to_Claw11", 
             "type": "revolute",             
             "bodyA": 3, 
             "bodyB": 4, 
@@ -369,7 +369,7 @@
             "enableMotor": true 
         },
         {
-            "name": "Arm3_to_Claw20", 
+            "name": "Arm3_to_Claw21", 
             "type": "revolute",             
             "bodyA": 3, 
             "bodyB": 5, 
@@ -392,7 +392,7 @@
             "enableMotor": true 
         },
         {
-            "name": "Claw10_to_Claw11", 
+            "name": "Claw11_to_Claw12", 
             "type": "revolute",             
             "bodyA": 4, 
             "bodyB": 6, 
@@ -415,7 +415,7 @@
             "enableMotor": true 
         },
         {
-            "name": "Claw20_to_Claw21", 
+            "name": "Claw21_to_Claw22", 
             "type": "revolute",             
             "bodyA": 5, 
             "bodyB": 7, 
