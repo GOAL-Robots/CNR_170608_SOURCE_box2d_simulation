@@ -34,7 +34,7 @@ class Box2DSimOneArmEnv(gym.Env):
                 'Arm3_to_Claw11', 'Claw21_to_Claw22', 
                 'Arm3_to_Claw21', 'Claw11_to_Claw12'] 
 
-        self.object_name = "Object"
+        self.object_names = ["Object"]
 
         self.num_joints = 5
         self.num_touch_sensors = 7
@@ -47,8 +47,10 @@ class Box2DSimOneArmEnv(gym.Env):
         
         self.observation_space = gym.spaces.Dict({
             "JOINT_POSITIONS": gym.spaces.Box(-np.inf, np.inf, [self.num_joints], dtype = float),
-            "TOUCH_SENSORS": gym.spaces.Box(0, np.inf, [self.num_touch_sensors], dtype = float),
-            "OBJ_POSITION": gym.spaces.Box(-np.inf, np.inf, [2], dtype = float)
+            "TOUCH_SENSORS": gym.spaces.Dict({ 
+                obj_name: gym.spaces.Box(0, np.inf, [self.num_touch_sensors], dtype = float)
+                for obj_name in self.object_names}),
+            "OBJ_POSITION": gym.spaces.Box(-np.inf, np.inf, [len(self.object_names), 2], dtype = float)
             })
        
         self.rendererType = TestPlotter
@@ -81,9 +83,10 @@ class Box2DSimOneArmEnv(gym.Env):
     def get_observation(self):
 
         joints = [self.sim.joints[name].angle for name in self.joint_names]
-        sensors = [self.sim.contacts(part, self.object_name) 
-            for part in self.robot_parts_names]
-        obj_pos = self.sim.bodies[self.object_name].worldCenter
+        sensors = {object_name: [self.sim.contacts(part, object_name) 
+            for part in self.robot_parts_names] for object_name in self.object_names}
+        obj_pos = np.array([[self.sim.bodies[object_name].worldCenter]
+            for object_name in self.object_names])
         
         return joints, sensors, obj_pos
 
