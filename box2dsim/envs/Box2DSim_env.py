@@ -5,6 +5,10 @@ from .Simulator import Box2DSim as Sim, TestPlotter, TestPlotterOneEye, VisualSe
 import pkg_resources
 from scipy import ndimage
 
+def softmax(x, t=0.01):
+    e = np.exp(x/t)
+    return e/e.sum()
+
 def DefaultRewardFun(observation):
     return np.sum(observation['TOUCH_SENSORS'])
 
@@ -174,7 +178,7 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
         saliency = self.filter(self.bground.step([
             self.bground_height/2 + self.taskspace_ylim[0], 
             self.bground_width/2 + self.taskspace_xlim[0]]))
-        
+       
         # visual
         if self.t == 0:
             self.eye_pos = self.sample_visual(saliency) 
@@ -196,15 +200,14 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
 
     def sample_visual(self, saliency):
         
-        csal = saliency[::-1].ravel().cumsum()
+        csal = softmax(saliency[::-1].ravel()).cumsum()
         sample = np.random.rand()
         idx = np.argmax(np.diff(csal > sample))
         idcs = np.array([
-            idx/self.bground_pixel_side,
-            idx%self.bground_pixel_side])/self.bground_pixel_side
+            idx%self.bground_pixel_side,
+            idx/self.bground_pixel_side])/self.bground_pixel_side
         pos = idcs*[self.bground_height, self.bground_width] + \
                 [self.taskspace_ylim[0], self.taskspace_xlim[0]]
-        print(pos)
         return pos
 
 
@@ -216,11 +219,11 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
 
         self.flts = []
 
-        flt = 10*np.eye(3) - 1 
+        flt = 8*np.eye(3) - 1 
         self.flts.append(np.copy(flt))
         self.flts.append(np.copy(flt[::-1]))
 
-        flt = 10*(np.ones([3, 3])*[[0, 1, 0]]) - 1 
+        flt = 8*(np.ones([3, 3])*[[0, 1, 0]]) - 1 
         self.flts.append(np.copy(flt))
         self.flts.append(np.copy(flt.T))
 
@@ -231,6 +234,19 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
         sal = np.maximum(0,
             np.prod([ndimage.convolve(img, flt) 
                 for flt in self.flts], 0)) 
+
+        hand_pos = np.array([self.sim.bodies[name].worldCenter 
+            for name in ["claw11", "claw12", "claw21", "claw22"]]).mean(0)
+        hand_pos = hand_pos[::-1]
+        
+        hand_pos -= [self.taskspace_ylim[0],  self.taskspace_xlim[0]]
+        hand_pos *= [(self.bground_pixel_side+2)/self.bground_height, 
+                (self.bground_pixel_side+2)/self.bground_width]
+        hand_pos = hand_pos.astype(int)
+        hand_pos[0] = self.bground_pixel_side - hand_pos[0]
+        sal[hand_pos[0], hand_pos[1]] += 4
+
+        
         sal = sal/sal.sum() 
         return sal
 
