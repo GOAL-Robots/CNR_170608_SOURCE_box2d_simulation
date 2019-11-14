@@ -34,7 +34,7 @@ ax = fig.add_subplot(121)
 screen = ax.imshow(np.zeros([2,2]), vmin=-0.3, vmax=1.3, cmap=plt.cm.binary)
 ax.set_axis_off()
 ax1 = fig.add_subplot(122)
-fov = ax1.imshow(np.zeros([2,2]), vmin=-0.3, vmax=1.3, cmap=plt.cm.binary)
+fov = ax1.imshow(np.zeros([2, 2, 3]),vmin=0, vmax=1)
 ax1.set_axis_off()
 
 for t in range(stime):  

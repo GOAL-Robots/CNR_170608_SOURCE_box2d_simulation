@@ -6,7 +6,7 @@ import pkg_resources
 from scipy import ndimage
 
 def softmax(x, t=0.01):
-    e = np.exp(x/t)
+    e = np.exp((x - np.min(x))/t)
     return e/e.sum()
 
 def DefaultRewardFun(observation):
@@ -23,7 +23,7 @@ class Box2DSimOneArmEnv(gym.Env):
 
         super(Box2DSimOneArmEnv, self).__init__()
 
-        world_file = pkg_resources.resource_filename('box2dsim', 'models/arm.json')   
+        world_file = pkg_resources.resource_filename('box2dsim', 'models/arm_2obj.json')   
         self.sim = Sim(world_file)
 
         self.robot_parts_names = ['Base', 'Arm1', 'Arm2',
@@ -34,7 +34,7 @@ class Box2DSimOneArmEnv(gym.Env):
                 'Arm3_to_Claw11', 'Claw21_to_Claw22', 
                 'Arm3_to_Claw21', 'Claw11_to_Claw12'] 
 
-        self.object_name = "Object"
+        self.object_names = ["Object1", "Object2"]
 
         self.num_joints = 5
         self.num_touch_sensors = 7
@@ -47,8 +47,10 @@ class Box2DSimOneArmEnv(gym.Env):
         
         self.observation_space = gym.spaces.Dict({
             "JOINT_POSITIONS": gym.spaces.Box(-np.inf, np.inf, [self.num_joints], dtype = float),
-            "TOUCH_SENSORS": gym.spaces.Box(0, np.inf, [self.num_touch_sensors], dtype = float),
-            "OBJ_POSITION": gym.spaces.Box(-np.inf, np.inf, [2], dtype = float)
+            "TOUCH_SENSORS": gym.spaces.Dict({ 
+                obj_name: gym.spaces.Box(0, np.inf, [self.num_touch_sensors], dtype = float)
+                for obj_name in self.object_names}),
+            "OBJ_POSITION": gym.spaces.Box(-np.inf, np.inf, [len(self.object_names), 2], dtype = float)
             })
        
         self.rendererType = TestPlotter
@@ -81,9 +83,10 @@ class Box2DSimOneArmEnv(gym.Env):
     def get_observation(self):
 
         joints = [self.sim.joints[name].angle for name in self.joint_names]
-        sensors = [self.sim.contacts(part, self.object_name) 
-            for part in self.robot_parts_names]
-        obj_pos = self.sim.bodies[self.object_name].worldCenter
+        sensors = {object_name: [self.sim.contacts(part, object_name) 
+            for part in self.robot_parts_names] for object_name in self.object_names}
+        obj_pos = np.array([[self.sim.bodies[object_name].worldCenter]
+            for object_name in self.object_names])
         
         return joints, sensors, obj_pos
 
@@ -148,7 +151,7 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
         
         self.fovea_width = 4
         self.fovea_height = 4
-        self.fovea_pixel_side = 40
+        self.fovea_pixel_side = 36
         self.fovea = VisualSensor(self.sim, 
                 size=(self.fovea_pixel_side, self.fovea_pixel_side), 
                 rng=(self.fovea_width,  self.fovea_height))  
@@ -158,7 +161,7 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
             "JOINT_POSITIONS": gym.spaces.Box(-np.inf, np.inf, [self.num_joints], dtype = float),
             "TOUCH_SENSORS": gym.spaces.Box(0, np.inf, [self.num_touch_sensors], dtype = float),
             "VISUAL_SALIENCY": gym.spaces.Box(0, np.inf,  self.bground.size, dtype = float),
-            "VISUAL_SENSOR": gym.spaces.Box(0, np.inf,  self.fovea.size, dtype = float),
+            "VISUAL_SENSOR": gym.spaces.Box(0, np.inf,  self.fovea.size + [3], dtype = float),
             "OBJ_POSITION": gym.spaces.Box(-np.inf, np.inf, [2], dtype = float)
             })
 
@@ -186,7 +189,8 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
         elif self.t % 5 == 0:
             self.eye_pos = self.sample_visual(saliency) 
             self.visual = self.fovea.step(self.eye_pos)
-    
+        
+
         observation = {
             "JOINT_POSITIONS": joints,
             "TOUCH_SENSORS": sensors,
@@ -201,11 +205,16 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
     def sample_visual(self, saliency):
         
         csal = softmax(saliency[::-1].ravel()).cumsum()
-        sample = np.random.rand()
+        sample = np.random.uniform(0, 1)
         idx = np.argmax(np.diff(csal > sample))
+        
         idcs = np.array([
             idx%self.bground_pixel_side,
-            idx/self.bground_pixel_side])/self.bground_pixel_side
+            idx//self.bground_pixel_side])
+        
+        idcs = idcs +  [1.5, 1.5]
+       
+        idcs = idcs / self.bground_pixel_side
         pos = idcs*[self.bground_height, self.bground_width] + \
                 [self.taskspace_ylim[0], self.taskspace_xlim[0]]
         return pos
@@ -216,36 +225,42 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
         Initialize filters to detect saliency in image
         """
     
+        excit = 2
+        inhib = 0.8
+        side = 3
 
         self.flts = []
 
-        flt = 8*np.eye(3) - 1 
-        self.flts.append(np.copy(flt))
-        self.flts.append(np.copy(flt[::-1]))
-
-        flt = 8*(np.ones([3, 3])*[[0, 1, 0]]) - 1 
-        self.flts.append(np.copy(flt))
-        self.flts.append(np.copy(flt.T))
-
+        # filters for angles 
+        for x in range(side):
+            for y in range(side):
+                if x == 0 or y == 0 or x == (side-1) or y == (side-1):
+                    flt = np.zeros([side, side])
+                    flt[x, y] = 1
+                    flt = excit*flt - inhib 
+                    self.flts.append(flt)
+        
         self.flts = np.array([flt/flt.sum() for flt in self.flts])
         
 
     def filter(self, img):
+
+        img = 1 - np.mean(img, axis=2)
         sal = np.maximum(0,
             np.prod([ndimage.convolve(img, flt) 
                 for flt in self.flts], 0)) 
-
+        
         hand_pos = np.array([self.sim.bodies[name].worldCenter 
             for name in ["claw11", "claw12", "claw21", "claw22"]]).mean(0)
         hand_pos = hand_pos[::-1]
         
         hand_pos -= [self.taskspace_ylim[0],  self.taskspace_xlim[0]]
-        hand_pos *= [(self.bground_pixel_side+2)/self.bground_height, 
-                (self.bground_pixel_side+2)/self.bground_width]
+        hand_pos *= [(self.bground_pixel_side)/self.bground_height, 
+                (self.bground_pixel_side)/self.bground_width]
         hand_pos = hand_pos.astype(int)
         hand_pos[0] = self.bground_pixel_side - hand_pos[0]
-        sal[hand_pos[0], hand_pos[1]] += 4
-
+        
+        sal[hand_pos[0], hand_pos[1]] += 0.1    
         
         sal = sal/sal.sum() 
         return sal

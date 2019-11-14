@@ -90,7 +90,7 @@ class VisualSensor:
 
         """
 
-        self.size = np.copy(size)
+        self.size = list(size)
 
         # make a canvas with coordinates
         x = np.arange(-self.size[0]//2, self.size[0]//2) + 1
@@ -100,7 +100,7 @@ class VisualSensor:
         self.scale = np.array(rng)/size
         self.radius = np.mean(np.array(rng)/size)
         self.sim = sim
-        self.retina = np.zeros(self.size)
+        self.retina = np.zeros(self.size + [3])
 
     def step(self, focus) :
         """ Run a single simulator step
@@ -122,8 +122,13 @@ class VisualSensor:
             vercs = vercs[np.arange(len(vercs))+[0]]
             data = [body.GetWorldPoint(vercs[x]) 
                 for x in range(len(vercs))]
-            self.retina += self.path2pixels(data, focus)
-
+            body_pixels =  self.path2pixels(data, focus)
+            if body.color is None: body.color = [0.5, 0.5, 0.5]
+            color = np.array(body.color)
+            body_pixels = body_pixels.reshape(body_pixels.shape + (1,))*(1 - color)
+            self.retina += body_pixels
+        rmax = self.retina.max() if self.retina.max() > 0 else 1 
+        self.retina = 1 - (self.retina/rmax)
         return self.retina
 
     def path2pixels(self, vertices, focus):
@@ -162,16 +167,10 @@ class TestPlotter:
         self.ax = self.fig.add_subplot(111, aspect="equal")
         self.polygons = {}
         for key in self.env.sim.bodies.keys() :
-            if key in self.env.robot_parts_names:
-                self.polygons[key] = Polygon([[0, 0]],
-                        ec=[0, 0, 0, 1],
-                        fc=[.6, 0.6, 0.6, 1], 
-                        closed=True)
-            else:
-                self.polygons[key] = Polygon([[0, 0]],
-                        ec=[0.0, 0.1, 0.0, 1], 
-                        fc=[0.3, 0.8, 0.3, 1], 
-                        closed=True)
+            self.polygons[key] = Polygon([[0, 0]],
+                    ec=self.env.sim.bodies[key].color + [1], 
+                    fc=self.env.sim.bodies[key].color + [1], 
+                    closed=True)
 
             self.ax.add_artist(self.polygons[key])
         self.ax.set_xlim(xlim)
@@ -215,13 +214,11 @@ class TestPlotterOneEye(TestPlotter):
         super(TestPlotterOneEye, self).__init__(*args, **kargs)
         self.eyepos, = self.ax.plot(0, 0)
 
-
     def onStep(self):
 
         pos = np.copy(self.env.eye_pos)
-        x = pos[0] + [-2, -2, 2, 2, -2]
-        y = pos[1] + [-2,  2, 2, -2, -2]
+        x = pos[0] + np.array([-1, -1, 1,  1, -1])*self.env.fovea_height*0.5
+        y = pos[1] + np.array([-1,  1, 1, -1, -1])*self.env.fovea_width*0.5
         self.eyepos.set_data(x, y)
 
         
-

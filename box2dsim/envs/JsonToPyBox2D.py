@@ -100,6 +100,10 @@ def add_bodies(b2_world, jsw):
         # add bodies to world
         for js_body in jsw["body"]:
             key, ref = add_body(b2_world, jsw, js_body)
+            color = None
+            if "color" in js_body.keys():
+                color = js_body["color"]
+            ref.color = color
             body_refs[key] = ref
     return body_refs
 
