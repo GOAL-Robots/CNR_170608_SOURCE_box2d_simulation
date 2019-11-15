@@ -127,8 +127,7 @@ class VisualSensor:
             color = np.array(body.color)
             body_pixels = body_pixels.reshape(body_pixels.shape + (1,))*(1 - color)
             self.retina += body_pixels
-        rmax = self.retina.max() if self.retina.max() > 0 else 1 
-        self.retina = 1 - (self.retina/rmax)
+        self.retina = np.maximum(0, 1 - (self.retina))
         return self.retina
 
     def path2pixels(self, vertices, focus):
