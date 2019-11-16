@@ -38,7 +38,7 @@ fov = ax1.imshow(np.zeros([2, 2, 3]),vmin=0, vmax=1)
 ax1.set_axis_off()
 
 for t in range(stime):  
-    env.render()
+    env.render('offline')
     action = actions_interp[t]
     observation,*_ = env.step(action)
     sal = observation["VISUAL_SALIENCY"]

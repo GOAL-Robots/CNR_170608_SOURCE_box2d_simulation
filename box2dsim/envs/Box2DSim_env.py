@@ -5,7 +5,7 @@ from .Simulator import Box2DSim as Sim, TestPlotter, TestPlotterOneEye, VisualSe
 import pkg_resources
 from scipy import ndimage
 
-def softmax(x, t=0.01):
+def softmax(x, t=0.03):
     e = np.exp((x - np.min(x))/t)
     return e/e.sum()
 
@@ -190,7 +190,6 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
             self.eye_pos = self.sample_visual(saliency) 
             self.visual = self.fovea.step(self.eye_pos)
         
-
         observation = {
             "JOINT_POSITIONS": joints,
             "TOUCH_SENSORS": sensors,
@@ -260,7 +259,7 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
         hand_pos = hand_pos.astype(int)
         hand_pos[0] = self.bground_pixel_side - hand_pos[0]
         
-        sal[hand_pos[0], hand_pos[1]] += 0.1    
+        sal[hand_pos[0], hand_pos[1]] += 0.04    
         
         sal = sal/sal.sum() 
         return sal
