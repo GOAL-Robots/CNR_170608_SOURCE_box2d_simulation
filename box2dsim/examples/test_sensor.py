@@ -9,16 +9,22 @@ import matplotlib.pyplot as plt
 
 env = gym.make('Box2DSimOneArmOneEye-v0')
 
-stime = 120
-actions = np.pi*np.array([
-    [0.00,   0.00,  0.00,  0.00,  0.00],
-    [0.20,   -0.30, -0.20,  0.50 , 0.00],
-    [0.20,   -0.30, -0.30,  0.50 , 0.00],
-    [0.10,   -0.30, -0.30,  0.20 , 0.30],
-    [0.00,   -0.30, -0.30,  0.20 , 0.50],
-    [0.00,   -0.30, -0.30,  0.20 , 0.50],
-    [0.00,   -0.30, -0.30,  0.20 , 0.50],
-    ])
+stime = 200
+
+random = True
+
+if random is True:
+    actions = np.pi*np.random.uniform(-0.5, 0.5, [40, 5])    
+else:
+    actions = np.pi*np.array([
+        [0.00,   0.00,  0.00,  0.00,  0.00],
+        [0.20,   -0.30, -0.20,  0.50 , 0.00],
+        [0.20,   -0.30, -0.30,  0.50 , 0.00],
+        [0.10,   -0.30, -0.30,  0.20 , 0.30],
+        [0.00,   -0.30, -0.30,  0.20 , 0.50],
+        [0.00,   -0.30, -0.30,  0.20 , 0.50],
+        [0.00,   -0.30, -0.30,  0.20 , 0.50],
+        ])
 
 actions_interp = np.zeros([stime, 5])
 for joint_idx, joint_timeline in enumerate(actions.T):
@@ -38,7 +44,7 @@ fov = ax1.imshow(np.zeros([2, 2, 3]),vmin=0, vmax=1)
 ax1.set_axis_off()
 
 for t in range(stime):  
-    env.render('offline')
+    env.render()
     action = actions_interp[t]
     observation,*_ = env.step(action)
     sal = observation["VISUAL_SALIENCY"]
