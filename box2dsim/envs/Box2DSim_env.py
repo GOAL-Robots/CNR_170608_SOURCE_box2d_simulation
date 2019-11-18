@@ -23,8 +23,9 @@ class Box2DSimOneArmEnv(gym.Env):
 
         super(Box2DSimOneArmEnv, self).__init__()
 
-        world_file = pkg_resources.resource_filename('box2dsim', 'models/arm_2obj.json')   
-        self.sim = Sim(world_file)
+        self.world_file = pkg_resources.resource_filename('box2dsim', 'models/arm_2obj.json')   
+        
+        self.reset()
 
         self.robot_parts_names = ['Base', 'Arm1', 'Arm2',
                 'Arm3', 'claw11', 'claw21', 'claw12', 'claw22']
@@ -117,9 +118,26 @@ class Box2DSimOneArmEnv(gym.Env):
         
         return observation, reward, done, info
 
+    def randomize_objects(self):
+
+        for key  in self.sim.bodies.keys():
+            if "Object" in key:
+                verts = np.array(self.sim.bodies[key].fixtures[0].shape.vertices)
+                
+                vmean = verts.mean(0)
+                verts = (verts - vmean)*(0.8 + 0.6*np.random.rand()) +\
+                        + 0.2*np.random.randn(*verts.shape) + \
+                        vmean
+
+                #verts  += 0.1*np.random.randn(*verts.shape)
+
+                verts = self.sim.bodies[key].fixtures[0].shape.vertices = verts.tolist()
+
+
     def reset(self):
 
-        self.sim = Sim(world_file)
+        self.sim = Sim(self.world_file)
+        self.randomize_objects()
 
     def render(self, mode='human'):
 
@@ -140,15 +158,32 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
     def __init__(self):
 
         super(Box2DSimOneArmOneEyeEnv, self).__init__()
-
         
+        self.set_taskspace(self.taskspace_xlim, self.taskspace_ylim)
+
+        self.init_salience_filters()
+        self.eye_pos = [0,0]
+        self.rendererType = TestPlotterOneEye
+        self.t = 0
+
+    def set_taskspace(self, taskspace_xlim, taskspace_ylim):
+       
+        self.taskspace_xlim = taskspace_xlim
+        self.taskspace_ylim = taskspace_ylim
+
         self.bground_width = np.diff(self.taskspace_xlim)[0]
         self.bground_height = np.diff(self.taskspace_ylim)[0]
-        self.bground_pixel_side = 32
+        self.bground_pixel_side = int(self.bground_width)
         self.bground = VisualSensor(self.sim,
                 size=(self.bground_pixel_side, self.bground_pixel_side), 
                 rng=(self.bground_width,  self.bground_height))  
-        
+
+
+        self.bground_ratio = np.array([ 
+                self.bground_width/self.bground_pixel_side,
+                self.bground_height/self.bground_pixel_side ])
+
+
         self.fovea_width = 4
         self.fovea_height = 4
         self.fovea_pixel_side = 36
@@ -164,11 +199,7 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
             "VISUAL_SENSOR": gym.spaces.Box(0, np.inf,  self.fovea.size + [3], dtype = float),
             "OBJ_POSITION": gym.spaces.Box(-np.inf, np.inf, [2], dtype = float)
             })
-
-        self.init_salience_filters()
-        self.eye_pos = [0,0]
-        self.rendererType = TestPlotterOneEye
-        self.t = 0
+ 
 
     def get_salient_points(self, bground):
         pass
@@ -239,6 +270,20 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
                     flt = excit*flt - inhib 
                     self.flts.append(flt)
         
+        # filters for loping 
+        flt = np.ones([side, side])
+        flt = np.triu(flt) 
+        self.flts.append(flt)   
+        flt = np.ones([side, side])
+        flt = np.tril(flt) 
+        self.flts.append(flt)  
+        flt = np.ones([side, side])
+        flt = np.triu(flt)[::-1]
+        self.flts.append(flt)   
+        flt = np.ones([side, side])
+        flt = np.tril(flt)[::-1]
+        self.flts.append(flt)
+
         self.flts = np.array([flt/flt.sum() for flt in self.flts])
         
 
@@ -253,13 +298,12 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
             for name in ["claw11", "claw12", "claw21", "claw22"]]).mean(0)
         hand_pos = hand_pos[::-1]
         
-        hand_pos -= [self.taskspace_ylim[0],  self.taskspace_xlim[0]]
-        hand_pos *= [(self.bground_pixel_side)/self.bground_height, 
-                (self.bground_pixel_side)/self.bground_width]
+        hand_pos -= [self.taskspace_ylim[0],  self.taskspace_xlim[0]] 
+        hand_pos /= self.bground_ratio 
         hand_pos = hand_pos.astype(int)
         hand_pos[0] = self.bground_pixel_side - hand_pos[0]
-        
-        sal[hand_pos[0], hand_pos[1]] += 0.04    
+       
+        sal[hand_pos[0], hand_pos[1]] += 0.009    
         
         sal = sal/sal.sum() 
         return sal

@@ -8,13 +8,14 @@ import matplotlib.pyplot as plt
 
 
 env = gym.make('Box2DSimOneArmOneEye-v0')
+env.set_taskspace([-10, 50], [-10, 50])
+stime = 100
+trials = 10
 
-stime = 200
-
-random = True
+random = False 
 
 if random is True:
-    actions = np.pi*np.random.uniform(-0.5, 0.5, [40, 5])    
+    actions = np.pi*np.random.uniform(-0.5, 0.5, [10, 5])    
 else:
     actions = np.pi*np.array([
         [0.00,   0.00,  0.00,  0.00,  0.00],
@@ -43,14 +44,16 @@ ax1 = fig.add_subplot(122)
 fov = ax1.imshow(np.zeros([2, 2, 3]),vmin=0, vmax=1)
 ax1.set_axis_off()
 
-for t in range(stime):  
-    env.render()
-    action = actions_interp[t]
-    observation,*_ = env.step(action)
-    sal = observation["VISUAL_SALIENCY"]
-        
-    screen.set_array(sal/sal.max())
-    fov.set_array(observation["VISUAL_SENSOR"])
-    fig.canvas.draw()
+for k in range(trials):
+    env.reset()
+    for t in range(stime):  
+        env.render()
+        action = actions_interp[t]
+        observation,*_ = env.step(action)
+        sal = observation["VISUAL_SALIENCY"]
+            
+        screen.set_array(sal/sal.max())
+        fov.set_array(observation["VISUAL_SENSOR"])
+        fig.canvas.draw()
 
 input()
