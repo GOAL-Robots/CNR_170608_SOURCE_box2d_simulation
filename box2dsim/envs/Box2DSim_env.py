@@ -22,10 +22,10 @@ class Box2DSimOneArmEnv(gym.Env):
     def __init__(self):
 
         super(Box2DSimOneArmEnv, self).__init__()
-
-        self.world_file = pkg_resources.resource_filename('box2dsim', 'models/arm_2obj.json')   
-        
-        self.reset()
+        self.world_files = [
+                pkg_resources.resource_filename('box2dsim', 'models/arm_2obj_diff.json'),   
+                pkg_resources.resource_filename('box2dsim', 'models/arm_2obj.json') ] 
+ 
 
         self.robot_parts_names = ['Base', 'Arm1', 'Arm2',
                 'Arm3', 'claw11', 'claw21', 'claw12', 'claw22']
@@ -60,6 +60,8 @@ class Box2DSimOneArmEnv(gym.Env):
         self.taskspace_ylim = [-10, 30]
 
         self.set_reward_fun()
+        
+        self.reset()
 
     def set_reward_fun(self, rew_fun=None):    
 
@@ -118,8 +120,15 @@ class Box2DSimOneArmEnv(gym.Env):
         
         return observation, reward, done, info
 
-    def randomize_objects(self):
+    def choose_worldfile(self):
+     
+        curr_file = int(np.random.rand()<0.5)
+        self.world_file = self.world_files[curr_file]  
+       
 
+    def randomize_objects(self):
+       
+ 
         for key  in self.sim.bodies.keys():
             if "Object" in key:
                 verts = np.array(self.sim.bodies[key].fixtures[0].shape.vertices)
@@ -128,16 +137,17 @@ class Box2DSimOneArmEnv(gym.Env):
                 verts = (verts - vmean)*(0.8 + 0.6*np.random.rand()) +\
                         + 0.2*np.random.randn(*verts.shape) + \
                         vmean
-
-                #verts  += 0.1*np.random.randn(*verts.shape)
-
+                        
                 verts = self.sim.bodies[key].fixtures[0].shape.vertices = verts.tolist()
 
 
     def reset(self):
-
+        
+        self.choose_worldfile()
         self.sim = Sim(self.world_file)
         self.randomize_objects()
+        if self.renderer is not None:
+            self.renderer.reset()
 
     def render(self, mode='human'):
 
@@ -159,12 +169,17 @@ class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
 
         super(Box2DSimOneArmOneEyeEnv, self).__init__()
         
-        self.set_taskspace(self.taskspace_xlim, self.taskspace_ylim)
 
         self.init_salience_filters()
         self.eye_pos = [0,0]
         self.rendererType = TestPlotterOneEye
         self.t = 0
+
+    def reset(self):
+        super(Box2DSimOneArmOneEyeEnv, self).reset()
+        self.set_taskspace(self.taskspace_xlim, self.taskspace_ylim)
+        self.bground.reset(self.sim)
+        self.fovea.reset(self.sim)
 
     def set_taskspace(self, taskspace_xlim, taskspace_ylim):
        

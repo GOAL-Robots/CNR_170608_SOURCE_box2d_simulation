@@ -99,9 +99,14 @@ class VisualSensor:
         self.grid = np.vstack((X.flatten(), Y.flatten())).T 
         self.scale = np.array(rng)/size
         self.radius = np.mean(np.array(rng)/size)
-        self.sim = sim
         self.retina = np.zeros(self.size + [3])
+        
+        self.reset(sim);
+        
+    def reset(self, sim):
+        self.sim = sim
 
+    
     def step(self, focus) :
         """ Run a single simulator step
         
@@ -162,7 +167,18 @@ class TestPlotter:
         """
         self.env = env
         self.offline = offline
+        self.xlim = xlim
+        self.ylim = ylim
+
         self.fig = plt.figure()
+        self.ax = None
+        
+        self.reset()
+
+    def reset(self):
+
+        if self.ax is not None:
+            plt.delaxes(self.ax)
         self.ax = self.fig.add_subplot(111, aspect="equal")
         self.polygons = {}
         for key in self.env.sim.bodies.keys() :
@@ -172,12 +188,14 @@ class TestPlotter:
                     closed=True)
 
             self.ax.add_artist(self.polygons[key])
-        self.ax.set_xlim(xlim)
-        self.ax.set_ylim(ylim)
+
+        self.ax.set_xlim(self.xlim)
+        self.ax.set_ylim(self.ylim) 
         if not self.offline:
             self.fig.show()
         else:
             self.ts = 0
+
 
     def onStep(self):
         pass
@@ -211,13 +229,18 @@ class TestPlotterOneEye(TestPlotter):
     def __init__(self, *args, **kargs):
 
         super(TestPlotterOneEye, self).__init__(*args, **kargs)
-        self.eyepos, = self.ax.plot(0, 0)
+        self.eye_pos, = self.ax.plot(0, 0)
+
+    def reset(self):
+        super(TestPlotterOneEye, self).reset()
+        self.eye_pos, = self.ax.plot(0, 0)
 
     def onStep(self):
 
         pos = np.copy(self.env.eye_pos)
         x = pos[0] + np.array([-1, -1, 1,  1, -1])*self.env.fovea_height*0.5
         y = pos[1] + np.array([-1,  1, 1, -1, -1])*self.env.fovea_width*0.5
-        self.eyepos.set_data(x, y)
+        self.eye_pos.set_data(x, y)
+
 
         
