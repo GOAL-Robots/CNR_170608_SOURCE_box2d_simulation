@@ -159,18 +159,24 @@ class TestPlotter:
      
     """
 
-    def __init__(self, env, xlim=[-10, 30], ylim=[-10, 30], offline=False):
+    def __init__(self, env, xlim=[-10, 30], ylim=[-10, 30], figsize=None, offline=False):
         """
         Args:
             env (Box2DSim): a emulator object
             
         """
+
+
         self.env = env
         self.offline = offline
         self.xlim = xlim
         self.ylim = ylim
 
-        self.fig = plt.figure()
+        if figsize is None:
+            self.fig = plt.figure()
+        else:
+            self.fig = plt.figure(figsize=figsize)
+
         self.ax = None
         
         self.reset()
