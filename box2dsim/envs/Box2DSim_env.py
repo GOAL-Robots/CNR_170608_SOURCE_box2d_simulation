@@ -53,7 +53,7 @@ class Box2DSimOneArmEnv(gym.Env):
        
         self.rendererType = TestPlotter
         self.renderer = None
-        self.renderer_figsize = None
+        self.renderer_figsize = (3, 3) 
 
         self.taskspace_xlim = [-10, 30]
         self.taskspace_ylim = [-10, 30]
@@ -62,8 +62,8 @@ class Box2DSimOneArmEnv(gym.Env):
         
         self.reset(0)
 
-    def set_renderer_size(self, figsize):
-        self.renderer_size = figsize
+    def set_renderer_figsize(self, figsize):
+        self.renderer_figsize = figsize
 
 
     def init_worlds(self):
@@ -172,13 +172,13 @@ class Box2DSimOneArmEnv(gym.Env):
                 self.renderer = self.rendererType(self, 
                         xlim=self.taskspace_xlim,
                         ylim=self.taskspace_ylim,
-                        figsize=self.renderer_size )
+                        figsize=self.renderer_figsize )
         elif mode == 'offline': 
             if self.renderer is None:
                 self.renderer = self.rendererType(self, 
                         xlim=self.taskspace_xlim,
                         ylim=self.taskspace_ylim, offline=True,
-                        figsize=self.renderer_size )
+                        figsize=self.renderer_figsize )
         self.renderer.step()
  
 class Box2DSimOneArmOneEyeEnv(Box2DSimOneArmEnv):
