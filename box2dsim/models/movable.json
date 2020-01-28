@@ -1,0 +1,476 @@
+{
+    "gravity": {
+        "y": 0, 
+        "x": 0
+    },
+    "autoClearForces": true, 
+    "continuousPhysics": true, 
+    "subStepping": false, 
+    "warmStarting": true,
+    "body": [
+        {
+            "angle": 0.0, 
+            "name": "Base", 
+            "color": [0.7, 0.7, 0.7],
+            "position": {
+                "y": 4.5, 
+                "x": 4.0
+            }, 
+            "type": 0, 
+            "fixture": [
+                {
+                    "name": "", 
+                    "density": 10, 
+                    "group_index": 0,
+                    "polygon": {
+                        "vertices": {
+                            "y": [
+                                0.5, 
+                                0.5, 
+                                -0.5, 
+                                -0.5
+                            ], 
+                            "x": [
+                                -0.5, 
+                                0.5, 
+                                0.5, 
+                                -0.5
+                            ]
+                        }
+                    }
+                }
+            ]
+        }, 
+
+        {
+            "angle": 0.0, 
+            "name": "Arm1", 
+            "color": [0.7, 0.7, 0.7],
+            "position": {
+                "y": 7.0, 
+                "x": 4.0
+            }, 
+            "type": 2, 
+            "fixture": [
+                {
+                    "name": "", 
+                    "density": 5, 
+                    "group_index": 2,
+                    "polygon": {
+                        "vertices": {
+                            "y": [
+                                3.0, 
+                                3.0, 
+                                -3.0, 
+                                -3.0
+                            ], 
+                            "x": [
+                                -0.5, 
+                                0.5, 
+                                0.5, 
+                                -0.5
+                            ]
+                        }
+                    }
+                }
+            ]
+        }, 
+        {
+            "angle": 0.0, 
+            "name": "Arm2", 
+            "color": [0.7, 0.7, 0.7],
+            "position": {
+                "y": 13.0, 
+                "x": 4.0
+            }, 
+            "type": 2, 
+            "fixture": [
+                {
+                    "name": "",
+                    "density": 0.5, 
+                    "group_index": 2,
+                    "polygon": {
+                        "vertices": {
+                            "y": [
+                                3.0, 
+                                3.0, 
+                                -3.0, 
+                                -3.0
+                            ], 
+                            "x": [
+                                -0.5, 
+                                0.5, 
+                                0.5, 
+                                -0.5
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "angle": 0.0, 
+            "name": "Arm3", 
+            "color": [0.7, 0.7, 0.7],
+            "position": {
+                "y": 19.0, 
+                "x": 4.0
+            }, 
+            "type": 2, 
+            "fixture": [
+                {
+                    "name": "",
+                    "density": 0.5, 
+                    "group_index": 2,
+                    "polygon": {
+                        "vertices": {
+                            "y": [
+                                3.0, 
+                                3.0, 
+                                -3.0, 
+                                -3.0
+                            ], 
+                            "x": [
+                                -0.5, 
+                                0.5, 
+                                0.5, 
+                                -0.5
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "angle": 0.0, 
+            "name": "claw11", 
+            "color": [0.7, 0.7, 0.7],
+            "position": {
+                "y": 23.5, 
+                "x": 4.4
+            }, 
+            "type": 2, 
+            "fixture": [
+                {
+                    "name": "",
+                    "density": 0.5, 
+                    "group_index": 2,
+                    "polygon": {
+                        "vertices": {
+                            "y": [
+                                1.5, 
+                                1.5, 
+                                -1.5, 
+                                -1.5
+                            ], 
+                            "x": [
+                                -0.3, 
+                                0.6,
+                                0.3,
+                                -0.3
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "angle": 0.0, 
+            "name": "claw21", 
+            "color": [0.7, 0.7, 0.7],
+            "position": {
+                "y": 23.5, 
+                "x": 3.6
+            }, 
+            "type": 2, 
+            "fixture": [
+                {
+                    "name": "",
+                    "density": 0.5, 
+                    "group_index": 2,
+                    "polygon": {
+                        "vertices": {
+                            "y": [
+                                1.5, 
+                                1.5, 
+                                -1.5, 
+                                -1.5
+                            ], 
+                            "x": [
+                                0.3, 
+                                -0.6, 
+                                -0.3,
+                                0.3
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "angle": 0.0, 
+            "name": "claw12", 
+            "color": [0.7, 0.7, 0.7],
+            "position": {
+                "y": 26.8, 
+                "x": 4.5
+            }, 
+            "type": 2, 
+            "fixture": [
+                {
+                    "name": "",
+                    "group_index": 2,
+                    "density": 0.5, 
+                    "polygon": {
+                        "vertices": {
+                            "y": [
+                                1.5, 
+                                1.5, 
+                                -1.5, 
+                                -1.5
+                            ], 
+                            "x": [
+                                -0.3, 
+                                0.3,
+                                0.6,
+                                -0.3
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "angle": 0.0, 
+            "name": "claw22", 
+            "color": [0.7, 0.7, 0.7],
+            "position": {
+                "y": 26.8, 
+                "x": 3.5
+            }, 
+            "type": 2, 
+            "fixture": [
+                {
+                    "name": "",
+                    "density": 0.5, 
+                    "group_index": 2,
+                    "polygon": {
+                        "vertices": {
+                            "y": [
+                                1.5, 
+                                1.5, 
+                                -1.5, 
+                                -1.5
+                            ], 
+                            "x": [
+                                0.3, 
+                                -0.3,
+                                -0.6,
+                                0.3
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+
+        {
+            "angle": 0.0, 
+            "name": "movable", 
+            "color": [0.8,0.1,0.1],
+            
+            "position": {
+                "y": 15.0, 
+                "x": 15.0
+            }, 
+            "type": 2, 
+            "fixture": [
+                {
+                    "name": "",
+                    "density": 0.2, 
+                    "polygon": {
+                        "vertices": {
+                            "y": [
+                                4.0, 
+                                4.0, 
+                                -4.0
+                            ], 
+                            "x": [
+                                -1.0, 
+                                7.0, 
+                                1.0
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+
+    ],
+    "joint": [
+        {
+            "name": "Arm1_to_Arm2", 
+            "type": "revolute",             
+            "bodyA": 1, 
+            "bodyB": 2, 
+            "jointSpeed": 0, 
+            "refAngle": 0, 
+            "collideConnected": false, 
+            "maxMotorTorque": 10000, 
+            "enableLimit": true, 
+            "motorSpeed": 0, 
+            "anchorA": {
+                "y": 3.0, 
+                "x": 0.0
+            }, 
+            "anchorB": {
+                "y": -3.0, 
+                "x": 0.0
+            }, 
+            "upperLimit": 3.14, 
+            "lowerLimit": -3.14,             
+            "enableMotor": true 
+        },
+        {
+            "name": "Arm2_to_Arm3", 
+            "type": "revolute",             
+            "bodyA": 2, 
+            "bodyB": 3, 
+            "jointSpeed": 0, 
+            "refAngle": 0, 
+            "collideConnected": false, 
+            "maxMotorTorque": 10000, 
+            "enableLimit": true, 
+            "motorSpeed": 0, 
+            "anchorA": {
+                "y": 3.0, 
+                "x": 0.0
+            }, 
+            "anchorB": {
+                "y": -3.0, 
+                "x": 0.0
+            }, 
+            "upperLimit": 3.14, 
+            "lowerLimit": -3.14,             
+            "enableMotor": true 
+        },
+        {
+            "name": "Arm3_to_Claw11", 
+            "type": "revolute",             
+            "bodyA": 3, 
+            "bodyB": 4, 
+            "jointSpeed": 0, 
+            "refAngle": 0, 
+            "collideConnected": false, 
+            "maxMotorTorque": 10000, 
+            "enableLimit": false, 
+            "motorSpeed": 0, 
+            "anchorA": {
+                "y": 3, 
+                "x": 0.5
+            }, 
+            "anchorB": {
+                "y": -1.7, 
+                "x": 0.0
+            }, 
+            "upperLimit": 3.14, 
+            "lowerLimit": -3.14,             
+            "enableMotor": true 
+        },
+        {
+            "name": "Arm3_to_Claw21", 
+            "type": "revolute",             
+            "bodyA": 3, 
+            "bodyB": 5, 
+            "jointSpeed": 0, 
+            "refAngle": 0, 
+            "collideConnected": false, 
+            "maxMotorTorque": 10000, 
+            "enableLimit": false, 
+            "motorSpeed": 0, 
+            "anchorA": {
+                "y": 3, 
+                "x": -0.5
+            }, 
+            "anchorB": {
+                "y": -1.7, 
+                "x": 0.0
+            }, 
+            "upperLimit": 3.14, 
+            "lowerLimit": -3.14,             
+            "enableMotor": true 
+        },
+        {
+            "name": "Claw11_to_Claw12", 
+            "type": "revolute",             
+            "bodyA": 4, 
+            "bodyB": 6, 
+            "jointSpeed": 0, 
+            "refAngle": 0, 
+            "collideConnected": false, 
+            "maxMotorTorque": 10000, 
+            "enableLimit": true, 
+            "motorSpeed": 0, 
+            "anchorA": {
+                "y": 1.6, 
+                "x": 0.0
+            }, 
+            "anchorB": {
+                "y": -1.6, 
+                "x": 0.0
+            }, 
+            "upperLimit": 3.14, 
+            "lowerLimit": -3.14,             
+            "enableMotor": true 
+        },
+        {
+            "name": "Claw21_to_Claw22", 
+            "type": "revolute",             
+            "bodyA": 5, 
+            "bodyB": 7, 
+            "jointSpeed": 0, 
+            "refAngle": 0, 
+            "collideConnected": false, 
+            "maxMotorTorque": 10000, 
+            "enableLimit": true, 
+            "motorSpeed": 0, 
+            "anchorA": {
+                "y": 1.6, 
+                "x": 0.0
+            }, 
+            "anchorB": {
+                "y": -1.6, 
+                "x": 0.0
+            }, 
+            "upperLimit": 3.14, 
+            "lowerLimit": -3.14,             
+            "enableMotor": true 
+        },
+
+        {
+            "name": "Ground_to_Arm1", 
+            "type": "revolute",             
+            "bodyA": 0, 
+            "bodyB": 1, 
+            "jointSpeed": 0, 
+            "refAngle": 0, 
+            "collideConnected": false, 
+            "maxMotorTorque": 10000, 
+            "enableLimit": true, 
+            "motorSpeed": 0, 
+            "anchorA": {
+                "y": 0.0, 
+                "x": 0.0
+            }, 
+            "anchorB": {
+                "y": -2.5, 
+                "x": 0.0
+            }, 
+
+            "upperLimit": 3.14, 
+            "lowerLimit": -3.14,             
+            "enableMotor": true 
+        }
+
+    ] 
+}
